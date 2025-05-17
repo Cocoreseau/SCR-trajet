@@ -675,3 +675,92 @@ document.getElementById("searchBtn").addEventListener("click", () => {
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Planificateur d'itinéraires avec menu déroulant</title>
+</head>
+<body>
+
+<h2>Planificateur d'itinéraires</h2>
+
+<label for="start">Départ :</label>
+<select id="start">
+  <option value="">-- Choisir un arrêt --</option>
+</select>
+
+<label for="end">Arrivée :</label>
+<select id="end">
+  <option value="">-- Choisir un arrêt --</option>
+</select>
+
+<button id="searchBtn">Chercher itinéraires directs</button>
+
+<h3>Résultats :</h3>
+<ul id="results"></ul>
+
+<script>
+// Extraire la liste unique de tous les arrêts
+const allStopsSet = new Set();
+routes.forEach(route => {
+  route.stops.forEach(stop => allStopsSet.add(stop));
+});
+const allStops = Array.from(allStopsSet).sort();
+
+// Remplir les menus déroulants avec les arrêts
+function populateSelectOptions(selectId, stops) {
+  const select = document.getElementById(selectId);
+  stops.forEach(stop => {
+    const option = document.createElement("option");
+    option.value = stop;
+    option.textContent = stop;
+    select.appendChild(option);
+  });
+}
+
+populateSelectOptions("start", allStops);
+populateSelectOptions("end", allStops);
+
+// Fonction pour trouver les routes directes
+function findDirectRoutes(routes, fromStop, toStop) {
+  return routes.filter(route => {
+    const fromIndex = route.stops.indexOf(fromStop);
+    const toIndex = route.stops.indexOf(toStop);
+    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
+  });
+}
+
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const fromStop = document.getElementById("start").value;
+  const toStop = document.getElementById("end").value;
+  const resultsEl = document.getElementById("results");
+  resultsEl.innerHTML = "";
+
+  if (!fromStop || !toStop) {
+    resultsEl.innerHTML = "<li>Merci de choisir un arrêt de départ et un arrêt d'arrivée.</li>";
+    return;
+  }
+
+  if (fromStop === toStop) {
+    resultsEl.innerHTML = "<li>Le départ et l'arrivée doivent être différents.</li>";
+    return;
+  }
+
+  const foundRoutes = findDirectRoutes(routes, fromStop, toStop);
+
+  if (foundRoutes.length === 0) {
+    resultsEl.innerHTML = "<li>Aucun itinéraire direct trouvé.</li>";
+  } else {
+    foundRoutes.forEach(route => {
+      const li = document.createElement("li");
+      li.textContent = `${route.routeId} (${route.type}) : ${route.stops.join(" → ")}`;
+      resultsEl.appendChild(li);
+    });
+  }
+});
+</script>
+
+</body>
+</html>
