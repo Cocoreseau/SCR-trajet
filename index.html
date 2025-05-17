@@ -3,8 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <title>Test gares</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 30px; }
+  label { display: inline-block; width: 150px; margin-bottom: 10px; }
+  select { width: 200px; padding: 5px; margin-bottom: 10px; }
+  button { padding: 8px 16px; font-size: 16px; cursor: pointer; }
+  #result { margin-top: 20px; font-weight: bold; }
+</style>
 </head>
 <body>
+
 <label for="start">Gare de départ :</label>
 <select id="start"></select><br/>
 
@@ -13,7 +21,7 @@
 
 <button id="calculate">Calculer</button>
 
-<div id="result" style="margin-top:20px; font-weight:bold;"></div>
+<div id="result"></div>
 
 <script>
 const gares = [
@@ -49,5 +57,6 @@ document.getElementById("calculate").onclick = () => {
   }
 };
 </script>
+
 </body>
 </html>
