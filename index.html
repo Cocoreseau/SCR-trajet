@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculateur d'itinéraire Stepford Express</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; }
+  label, select, button { font-size: 1.1em; margin: 0.5em 0; }
+  #result { margin-top: 1em; white-space: pre-wrap; background: #f0f0f0; padding: 1em; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h1>Calculateur d'itinéraire Stepford Express</h1>
+
+<label for="start">Gare de départ :</label><br />
+<select id="start"></select>
+
+<br />
+
+<label for="end">Gare d'arrivée :</label><br />
+<select id="end"></select>
+
+<br />
+
+<button id="calcBtn">Calculer l'itinéraire</button>
+
+<div id="result"></div>
+
+<script>
+// Liste des gares (uniques, tirées du réseau donné)
+const stations = [
+  "Stepford Central", "St Helens Bridge", "Benton", "Elsemere Junction", "Morganstown",
+  "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
+  "Northshore", "Llyn-by-the-Sea", "Rayleigh Bay", "Eden Quay", "Newry", "Newry Harbour"
+];
+
+// Réseau Stepford Express (bidirectionnel)
+const edges = [
+  ["Stepford Central", "St Helens Bridge", 3],
+  ["St Helens Bridge", "Benton", 3],
+  ["St Helens Bridge", "Elsemere Junction", 3],
+  ["Elsemere Junction", "Morganstown", 3],
+  ["Morganstown", "Leighton Stepford Road", 4],
+  ["Benton", "Leighton Stepford Road", 4],
+  ["Leighton Stepford Road", "Leighton City", 2],
+  ["Leighton City", "Edgemead", 2],
+  ["Edgemead", "Westercoast", 3],
+  ["Westercoast", "Westwyvern", 4],
+  ["Westwyvern", "Northshore", 3],
+  ["Northshore", "Llyn-by-the-Sea", 4],
+  ["Edgemead", "Rayleigh Bay", 4],
+  ["Morganstown", "Benton", 3],
+  ["Benton", "Eden Quay", 3],
+  ["Eden Quay", "Newry", 2],
+  ["Newry", "Newry Harbour", 2]
+];
+
+// Construire un graphe pour Dijkstra
+const graph = {};
+for (const [from, to, time] of edges) {
+  if (!graph[from]) graph[from] = [];
+  if (!graph[to]) graph[to] = [];
+  graph[from].push({node: to, time});
+  graph[to].push({node: from, time});
+}
+
+// Remplir les select avec les gares
+const startSelect = document.getElementById("start");
+const endSelect = document.getElementById("end");
+
+function populateSelect(sel) {
+  stations.forEach(station => {
+    const opt = document.createElement("option");
+    opt.value = station;
+    opt.textContent = station;
+    sel.appendChild(opt);
+  });
+}
+
+populateSelect(startSelect);
+populateSelect(endSelect);
+
+// Dijkstra en JS pour plus court temps
+function dijkstra(start, end) {
+  const times = {};
+  const prev = {};
+  const visited = new Set();
+  stations.forEach(s => times[s] = Infinity);
+  times[start] = 0;
+
+  while (visited.size < stations.length) {
+    let curr = null;
+    let currTime = Infinity;
+    for (const s of stations) {
+      if (!visited.has(s) && times[s] < currTime) {
+        curr = s;
+        currTime = times[s];
+      }
+    }
+    if (curr === null) break;
+    if (curr === end) break;
+
+    visited.add(curr);
+    for (const {node, time} of graph[curr]) {
+      if (!visited.has(node)) {
+        const newTime = times[curr] + time;
+        if (newTime < times[node]) {
+          times[node] = newTime;
+          prev[node] = curr;
+        }
+      }
+    }
+  }
+
+  // Construire le chemin
+  if (times[end] === Infinity) return null;
+
+  const path = [];
+  let cur = end;
+  while (cur !== undefined) {
+    path.unshift(cur);
+    cur = prev[cur];
+  }
+  return {path, duration: times[end]};
+}
+
+document.getElementById("calcBtn").onclick = () => {
+  const start = startSelect.value;
+  const end = endSelect.value;
+  if (start === end) {
+    document.getElementById("result").textContent = "La gare de départ et d'arrivée sont identiques.";
+    return;
+  }
+  const result = dijkstra(start, end);
+  if (!result) {
+    document.getElementById("result").textContent = "Aucun itinéraire trouvé.";
+  } else {
+    let text = `Itinéraire le plus rapide entre\n${start} et ${end} :\n\n`;
+    text += result.path.join(" → ") + "\n";
+    text += `\nDurée estimée : ${result.duration} minutes`;
+    document.getElementById("result").textContent = text;
+  }
+};
+</script>
+
+</body>
+</html>
