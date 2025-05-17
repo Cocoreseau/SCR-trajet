@@ -28,10 +28,20 @@
     margin-top: 20px;
     border-radius: 10px;
   }
-  .stop-check {
-    font-size: 14px;
-    margin-left: 10px;
-    color: #888;
+  .stop-key {
+    font-weight: bold;
+    font-size: 16px;
+  }
+  .stop-transfer {
+    font-weight: bold;
+    font-size: 16px;
+    color: #9b0068;
+  }
+  .stop-intermediate {
+    font-style: italic;
+    font-size: 12px;
+    color: #555;
+    margin-left: 20px;
   }
   .transfer {
     margin: 15px 0;
@@ -114,6 +124,24 @@
       lineStops.slice(endIndex, startIndex + 1).reverse();
   }
 
+  function displaySegment(segment, keyStations) {
+    // keyStations = [start, end, (optionnel) correspondance]
+    // On affiche en gras start, end, correspondance
+    // Les autres en plus petit italique
+    let html = "";
+    segment.forEach(station => {
+      if (keyStations.includes(station)) {
+        // clé (départ, arrivée, correspondance)
+        const cls = keyStations.length > 2 && station === keyStations[1] ? "stop-transfer" : "stop-key";
+        html += `<div class="${cls}">→ ${station}</div>`;
+      } else {
+        // intermédiaire
+        html += `<div class="stop-intermediate">→ ${station}</div>`;
+      }
+    });
+    return html;
+  }
+
   function findRoute() {
     const from = fromSelect.value;
     const to = toSelect.value;
@@ -130,16 +158,13 @@
       const directPath = getPath(stops, from, to);
       if (directPath) {
         output += `<strong>Itinéraire direct Stepford Express (${lineName.replace('stepford_express_', '').replaceAll('_', ' ')})</strong><br>`;
-        directPath.forEach(station => {
-          output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
-        });
+        output += displaySegment(directPath, [from, to]);
         document.getElementById("result").innerHTML = output;
         return;
       }
     }
 
     // Si pas direct, chercher une correspondance simple (1 changement)
-    // On va chercher une gare commune entre une ligne contenant 'from' et une ligne contenant 'to'
     const linesWithFrom = [];
     const linesWithTo = [];
 
@@ -147,6 +172,9 @@
       if (stops.includes(from)) linesWithFrom.push({lineName, stops});
       if (stops.includes(to)) linesWithTo.push({lineName, stops});
     }
+
+    // Collecter toutes les correspondances possibles
+    const possibleTransfers = [];
 
     for (const fromLine of linesWithFrom) {
       for (const toLine of linesWithTo) {
@@ -157,22 +185,32 @@
             const segment1 = getPath(fromLine.stops, from, transferStation);
             const segment2 = getPath(toLine.stops, transferStation, to);
             if(segment1 && segment2) {
-              output += `<strong>Itinéraire Stepford Express avec correspondance</strong><br>`;
-              output += `<div>Départ ligne <em>${fromLine.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-              segment1.forEach(station => {
-                output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
+              possibleTransfers.push({
+                fromLine: fromLine.lineName,
+                toLine: toLine.lineName,
+                transferStation,
+                segment1,
+                segment2
               });
-              output += `<div class='transfer'>🚉 Changer de train à <strong>${transferStation}</strong></div>`;
-              output += `<div>Prendre ligne <em>${toLine.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-              segment2.forEach(station => {
-                output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
-              });
-              document.getElementById("result").innerHTML = output;
-              return;
             }
           }
         }
       }
+    }
+
+    if(possibleTransfers.length > 0) {
+      output += `<strong>Itinéraires Stepford Express avec correspondance</strong><br>`;
+      possibleTransfers.forEach((transfer, i) => {
+        output += `<hr>`;
+        output += `<div><em>Option ${i+1}</em></div>`;
+        output += `<div>Départ ligne <em>${transfer.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+        output += displaySegment(transfer.segment1, [from, transfer.transferStation, transfer.transferStation]);
+        output += `<div class="transfer">🚉 Changer de train à <strong>${transfer.transferStation}</strong></div>`;
+        output += `<div>Prendre ligne <em>${transfer.toLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+        output += displaySegment(transfer.segment2, [transfer.transferStation, to, transfer.transferStation]);
+      });
+      document.getElementById("result").innerHTML = output;
+      return;
     }
 
     output = "Aucune liaison directe ou avec une correspondance simple trouvée. Essayez d'autres gares.";
