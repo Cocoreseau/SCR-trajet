@@ -16,7 +16,7 @@
   {"routeId":"R015","type":"Waterline","stops":["Morganstown","Morganstown Docks","Port Benton","Benton"]},
   {"routeId":"R016","type":"Waterline","stops":["Esterfield","Rosedale Village","Farleigh","James Street","Airport West","Cambridge Street Parkway","Benton"]},
   {"routeId":"R017","type":"Waterline","stops":["Terminal 2","Airport West","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry"]},
-  {"routeId":"R018","type":"Waterline","stops":["Farlaigh","James Street","Airport West","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry","Newry Harbour"]},
+  {"routeId":"R018","type":"Waterline","stops":["Farleigh","James Street","Airport West","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry","Newry Harbour"]},
   {"routeId":"R019","type":"Waterline","stops":["Connoly","Ashlan Park","Cambridge Street Parkway","Benton"]},
   {"routeId":"R020","type":"Connect","stops":["Whitefield","Houghton Rake","Woodhead Lane","Stepford United Football Club","Stepford East","Stepford Central"]},
   {"routeId":"R021","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","Whitefield Lido","Stepford United Football Club"]},
