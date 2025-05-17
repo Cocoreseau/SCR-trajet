@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Itinéraire Stepford Express corrigé</title>
+<title>Itinéraire Stepford Express - Top 3 rapides</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -51,6 +51,14 @@
     border-radius: 8px;
     font-weight: bold;
     color: #9b0068;
+  }
+  .option {
+    margin-bottom: 30px;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #C71585;
+    margin: 20px 0;
   }
 </style>
 </head>
@@ -101,7 +109,6 @@
   const fromSelect = document.getElementById("from");
   const toSelect = document.getElementById("to");
 
-  // Remplir les selecteurs
   stations.forEach(station => {
     const optFrom = document.createElement("option");
     optFrom.value = station;
@@ -114,7 +121,6 @@
     toSelect.appendChild(optTo);
   });
 
-  // Récupérer segment entre 2 gares (ordre respecté)
   function getPath(lineStops, start, end) {
     const startIndex = lineStops.indexOf(start);
     const endIndex = lineStops.indexOf(end);
@@ -125,17 +131,13 @@
       lineStops.slice(endIndex, startIndex + 1).reverse();
   }
 
-  // Affiche un segment, avec les gares clés en gras et gares intermédiaires en italique
-  // keyStations contient départ, arrivée, correspondance (si any)
   function displaySegment(segment, keyStations) {
     let html = "";
     segment.forEach(station => {
       if (keyStations.includes(station)) {
-        // gare clé (départ, arrivée, correspondance)
         const cls = (keyStations.length > 2 && station === keyStations[1]) ? "stop-transfer" : "stop-key";
         html += `<div class="${cls}">→ ${station}</div>`;
       } else {
-        // gare intermédiaire
         html += `<div class="stop-intermediate">→ ${station}</div>`;
       }
     });
@@ -153,18 +155,23 @@
       return;
     }
 
-    // Chercher un trajet direct
+    // Tableau d'options de trajets
+    let routeOptions = [];
+
+    // Chercher trajet direct
     for (const [lineName, stops] of Object.entries(lines)) {
       const directPath = getPath(stops, from, to);
       if (directPath) {
-        output += `<strong>Itinéraire direct Stepford Express (${lineName.replace('stepford_express_', '').replaceAll('_', ' ')})</strong><br>`;
-        output += displaySegment(directPath, [from, to]);
-        document.getElementById("result").innerHTML = output;
-        return;
+        routeOptions.push({
+          type: "direct",
+          lineName,
+          segment1: directPath,
+          totalLength: directPath.length
+        });
       }
     }
 
-    // Pas direct, chercher une correspondance simple (1 changement)
+    // Chercher correspondances (1 changement)
     const linesWithFrom = [];
     const linesWithTo = [];
 
@@ -173,23 +180,22 @@
       if (stops.includes(to)) linesWithTo.push({ lineName, stops });
     }
 
-    const possibleTransfers = [];
-
     for (const fromLine of linesWithFrom) {
       for (const toLine of linesWithTo) {
-        // gare commune entre 2 lignes
         const commonStations = fromLine.stops.filter(st => toLine.stops.includes(st));
         for (const transferStation of commonStations) {
           if (transferStation !== from && transferStation !== to) {
             const segment1 = getPath(fromLine.stops, from, transferStation);
             const segment2 = getPath(toLine.stops, transferStation, to);
             if (segment1 && segment2) {
-              possibleTransfers.push({
+              routeOptions.push({
+                type: "transfer",
                 fromLine: fromLine.lineName,
                 toLine: toLine.lineName,
                 transferStation,
                 segment1,
-                segment2
+                segment2,
+                totalLength: segment1.length + segment2.length
               });
             }
           }
@@ -197,24 +203,27 @@
       }
     }
 
-    if (possibleTransfers.length > 0) {
-      output += `<strong>Itinéraires Stepford Express avec correspondance</strong><br>`;
-      possibleTransfers.forEach((transfer, i) => {
-        output += `<hr>`;
-        output += `<div><em>Option ${i + 1}</em></div>`;
-        output += `<div>Départ ligne <em>${transfer.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-        output += displaySegment(transfer.segment1, [from, transfer.transferStation, transfer.transferStation]);
-        output += `<div class="transfer">🚉 Changer de train à <strong>${transfer.transferStation}</strong></div>`;
-        output += `<div>Prendre ligne <em>${transfer.toLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-        output += displaySegment(transfer.segment2, [transfer.transferStation, to, transfer.transferStation]);
-      });
+    if (routeOptions.length === 0) {
+      output = "Aucune liaison directe ou avec une correspondance simple trouvée. Essayez d'autres gares.";
       document.getElementById("result").innerHTML = output;
       return;
     }
 
-    output = "Aucune liaison directe ou avec une correspondance simple trouvée. Essayez d'autres gares.";
-    document.getElementById("result").innerHTML = output;
-  }
-</script>
-</body>
-</html>
+    // Trier par longueur totale (nombre de gares) croissante
+    routeOptions.sort((a, b) => a.totalLength - b.totalLength);
+
+    // Garder seulement les 3 premières options
+    routeOptions = routeOptions.slice(0, 3);
+
+    output += `<strong>Les 3 itinéraires les plus rapides :</strong><br><br>`;
+
+    routeOptions.forEach((route, i) => {
+      output += `<div class="option">`;
+      output += `<div><em>Option ${i + 1}</em></div>`;
+
+      if (route.type === "direct") {
+        output += `<div>Itinéraire direct Stepford Express (${route.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}) :</div>`;
+        output += displaySegment(route.segment1, [from, to]);
+      } else if (route.type === "transfer") {
+        output += `<div>Départ ligne <em>${route.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+        output += displaySegment(route.segment1, [from, route.transferStation, route
