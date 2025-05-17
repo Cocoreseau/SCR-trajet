@@ -2,7 +2,19 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Planificateur d'itinéraires dans SCR !</title>
+<title>Planificateur d'itinéraires avec correspondance</title>
+<style>
+  .intermediate {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #555;
+  }
+  .normal {
+    font-style: normal;
+    font-size: 1em;
+    color: black;
+  }
+</style>
 </head>
 <body>
 
@@ -18,37 +30,34 @@
   <option value="">-- Choisir un arrêt --</option>
 </select>
 
-<button id="searchBtn">Chercher itinéraires directs</button>
+<button id="searchBtn">Chercher itinéraires</button>
 
 <h3>Résultats :</h3>
 <ul id="results"></ul>
 
 <script>
-// Même tableau routes avec des noms exacts (ajoute tes données complètes ici)
+// Ton tableau de routes (extrait réduit pour exemple)
 const routes = [
   {"routeId":"R001","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
   {"routeId":"R002","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
   {"routeId":"R003","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Angel Pass","Bondin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
-  // ... etc
+  {"routeId":"R010","type":"Waterline","stops":["Greenslade","Whitney Green","Morganstown Docks","Port Benton","Benton","West Benton","Faraday Road","Eden Quay","Newry"]},
+  {"routeId":"R011","type":"Waterline","stops":["Connoly","Ashlan Park","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry"]}
 ];
 
-// Fonction pour normaliser un nom d'arrêt pour comparaison
+// Normaliser les noms d'arrêt pour comparaison (minuscule + sans accents simples)
 function normalizeStopName(name) {
-  return name.toLowerCase()
-             .replace(/'/g, '')        // enlever apostrophes
-             .replace(/’/g, '')        // enlever apostrophes typographiques
-             .replace(/\s+/g, ' ')    // espace multiple → simple
-             .trim();
+  return name.trim().toLowerCase();
 }
 
-// Extraire la liste unique de tous les arrêts normalisés + originaux
+// Extraire la liste unique de tous les arrêts
 const allStopsSet = new Set();
 routes.forEach(route => {
   route.stops.forEach(stop => allStopsSet.add(stop));
 });
 const allStops = Array.from(allStopsSet).sort();
 
-// Remplir les menus déroulants
+// Remplir les menus déroulants avec les arrêts
 function populateSelectOptions(selectId, stops) {
   const select = document.getElementById(selectId);
   stops.forEach(stop => {
@@ -61,18 +70,96 @@ function populateSelectOptions(selectId, stops) {
 populateSelectOptions("start", allStops);
 populateSelectOptions("end", allStops);
 
-// Recherche d'itinéraires directs avec normalisation des arrêts
+// Chercher routes directes (avec sens)
 function findDirectRoutes(routes, fromStop, toStop) {
   const normFrom = normalizeStopName(fromStop);
   const normTo = normalizeStopName(toStop);
-
   return routes.filter(route => {
-    // normaliser tous les arrêts de la route
-    const normStops = route.stops.map(normalizeStopName);
-    const fromIndex = normStops.indexOf(normFrom);
-    const toIndex = normStops.indexOf(normTo);
+    const stopsNorm = route.stops.map(normalizeStopName);
+    const fromIndex = stopsNorm.indexOf(normFrom);
+    const toIndex = stopsNorm.indexOf(normTo);
     return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
   });
+}
+
+// Trouver routes qui passent par un arrêt donné
+function findRoutesPassingStop(routes, stop) {
+  const normStop = normalizeStopName(stop);
+  return routes.filter(route => 
+    route.stops.some(s => normalizeStopName(s) === normStop)
+  );
+}
+
+// Trouver arrêts communs entre deux routes (normalisés)
+function findCommonStopsBetweenRoutes(route1, route2) {
+  const normStops1 = route1.stops.map(normalizeStopName);
+  const normStops2 = new Set(route2.stops.map(normalizeStopName));
+  return normStops1.filter(stop => normStops2.has(stop));
+}
+
+// Chercher itinéraires avec une correspondance (un seul transfert)
+function findRoutesWithOneTransfer(routes, fromStop, toStop) {
+  const normFrom = normalizeStopName(fromStop);
+  const normTo = normalizeStopName(toStop);
+
+  const fromRoutes = findRoutesPassingStop(routes, fromStop);
+  const toRoutes = findRoutesPassingStop(routes, toStop);
+
+  const possiblePaths = [];
+
+  for (const r1 of fromRoutes) {
+    for (const r2 of toRoutes) {
+      // Si c’est la même route et qu’il n’y a pas d’itinéraire direct, on skip
+      if (r1.routeId === r2.routeId) continue;
+
+      const commonStops = findCommonStopsBetweenRoutes(r1, r2);
+
+      for (const commonStopNorm of commonStops) {
+        const r1StopsNorm = r1.stops.map(normalizeStopName);
+        const r2StopsNorm = r2.stops.map(normalizeStopName);
+
+        const fromIndex1 = r1StopsNorm.indexOf(normFrom);
+        const commonIndex1 = r1StopsNorm.indexOf(commonStopNorm);
+        const commonIndex2 = r2StopsNorm.indexOf(commonStopNorm);
+        const toIndex2 = r2StopsNorm.indexOf(normTo);
+
+        if (fromIndex1 === -1 || commonIndex1 === -1 || fromIndex1 >= commonIndex1) continue;
+        if (commonIndex2 === -1 || toIndex2 === -1 || commonIndex2 >= toIndex2) continue;
+
+        // Correspondance valide trouvée
+        possiblePaths.push({
+          firstRoute: r1,
+          transferStop: r1.stops[r1StopsNorm.indexOf(commonStopNorm)],
+          secondRoute: r2
+        });
+      }
+    }
+  }
+
+  return possiblePaths;
+}
+
+// Afficher itinéraire (direct ou avec correspondance)
+function displayRoute(route, fromStop, toStop, container) {
+  // Trouver indices des arrêts départ/arrivée dans la route
+  const stopsNorm = route.stops.map(normalizeStopName);
+  const fromIndex = stopsNorm.indexOf(normalizeStopName(fromStop));
+  const toIndex = stopsNorm.indexOf(normalizeStopName(toStop));
+  if (fromIndex === -1 || toIndex === -1) return;
+
+  // Parcourir les arrêts entre fromIndex et toIndex inclus
+  for (let i = fromIndex; i <= toIndex; i++) {
+    const li = document.createElement("li");
+    const stopName = route.stops[i];
+    if (i === fromIndex || i === toIndex) {
+      li.textContent = stopName;
+      li.className = "normal";
+    } else {
+      li.textContent = stopName;
+      li.className = "intermediate";
+    }
+    container.appendChild(li);
+  }
 }
 
 document.getElementById("searchBtn").addEventListener("click", () => {
@@ -85,47 +172,52 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     resultsEl.innerHTML = "<li>Merci de choisir un arrêt de départ et un arrêt d'arrivée.</li>";
     return;
   }
-
   if (fromStop === toStop) {
     resultsEl.innerHTML = "<li>Le départ et l'arrivée doivent être différents.</li>";
     return;
   }
 
-  const foundRoutes = findDirectRoutes(routes, fromStop, toStop);
+  // Chercher itinéraire direct
+  const directRoutes = findDirectRoutes(routes, fromStop, toStop);
 
-  if (foundRoutes.length === 0) {
-    resultsEl.innerHTML = "<li>Aucun itinéraire direct trouvé.</li>";
+  if (directRoutes.length > 0) {
+    directRoutes.forEach(route => {
+      const liTitle = document.createElement("li");
+      liTitle.innerHTML = `<strong>Itinéraire direct - Ligne ${route.routeId} (${route.type}) :</strong>`;
+      resultsEl.appendChild(liTitle);
+      displayRoute(route, fromStop, toStop, resultsEl);
+    });
+    return; // on stoppe si itinéraire direct trouvé
+  }
+
+  // Pas d'itinéraire direct, on cherche avec 1 correspondance
+  const transferRoutes = findRoutesWithOneTransfer(routes, fromStop, toStop);
+
+  if (transferRoutes.length === 0) {
+    resultsEl.innerHTML = "<li>Aucun itinéraire direct ou avec une correspondance trouvé.</li>";
   } else {
-    foundRoutes.forEach(route => {
-      // Normaliser la liste des arrêts pour trouver les indices
-      const normStops = route.stops.map(normalizeStopName);
-      const fromIndex = normStops.indexOf(normalizeStopName(fromStop));
-      const toIndex = normStops.indexOf(normalizeStopName(toStop));
+    transferRoutes.forEach(path => {
+      const liTitle = document.createElement("li");
+      liTitle.innerHTML = `<strong>Itinéraire avec 1 correspondance :</strong>`;
+      resultsEl.appendChild(liTitle);
 
-      // Extraire uniquement le segment demandé
-      const segmentStops = route.stops.slice(fromIndex, toIndex + 1);
+      // Afficher 1ère partie
+      const liPart1 = document.createElement("li");
+      liPart1.innerHTML = `<em>Ligne ${path.firstRoute.routeId} (${path.firstRoute.type}) de <strong>${fromStop}</strong> à <strong>${path.transferStop}</strong> :</em>`;
+      resultsEl.appendChild(liPart1);
+      displayRoute(path.firstRoute, fromStop, path.transferStop, resultsEl);
 
-      const li = document.createElement("li");
-
-      let content = `${route.routeId} (${route.type}) : `;
-
-      segmentStops.forEach((stop, i) => {
-        if (i === 0 || i === segmentStops.length - 1) {
-          content += `<span style="font-weight: normal;">${stop}</span>`;
-        } else {
-          content += `<span style="font-style: italic; font-size: smaller;">${stop}</span>`;
-        }
-        if (i < segmentStops.length - 1) {
-          content += " → ";
-        }
-      });
-
-      li.innerHTML = content;
-      resultsEl.appendChild(li);
+      // Afficher 2ème partie
+      const liPart2 = document.createElement("li");
+      liPart2.innerHTML = `<em>Ligne ${path.secondRoute.routeId} (${path.secondRoute.type}) de <strong>${path.transferStop}</strong> à <strong>${toStop}</strong> :</em>`;
+      resultsEl.appendChild(liPart2);
+      displayRoute(path.secondRoute, path.transferStop, toStop, resultsEl);
     });
   }
 });
 </script>
 
 </body>
+</html>
+
 </html>
