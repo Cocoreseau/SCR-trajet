@@ -2,28 +2,30 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Test gares</title>
+<title>Calculateur d'itinéraire Stepford</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 30px; }
-  label { display: inline-block; width: 150px; margin-bottom: 10px; }
-  select { width: 200px; padding: 5px; margin-bottom: 10px; }
-  button { padding: 8px 16px; font-size: 16px; cursor: pointer; }
-  #result { margin-top: 20px; font-weight: bold; }
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  label { display: block; margin-top: 10px; }
+  select, button { padding: 5px; font-size: 16px; margin-top: 5px; }
+  #result { margin-top: 20px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 
+<h2>Calculateur d'itinéraire Stepford</h2>
+
 <label for="start">Gare de départ :</label>
-<select id="start"></select><br/>
+<select id="start"></select>
 
 <label for="end">Gare d'arrivée :</label>
-<select id="end"></select><br/>
+<select id="end"></select>
 
 <button id="calculate">Calculer</button>
 
 <div id="result"></div>
 
 <script>
+// Liste de toutes les gares (uniquement celles utilisées par Stepford Express et Airlink)
 const gares = [
   "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
   "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea",
@@ -31,31 +33,193 @@ const gares = [
   "Airport Central", "Stepford East", "Berrily", "Airport Parkway", "Terminal 1", "Terminal 2", "Terminal 3", "Water Newton", "LSR"
 ];
 
+// Les opérateurs
+const OPERATORS = {
+  EXPRESS: "Stepford Express",
+  AIRLINK: "Airlink"
+};
+
+// Les lignes sous forme de graphes avec temps (minutes) entre gares adjacentes et opérateur
+// On considère que les trains s'arrêtent à toutes les gares de leur ligne
+
+const lines = [
+  // Stepford Express (temps en min)
+  { from: "Stepford Central", to: "St Helens Bridge", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "St Helens Bridge", to: "Benton", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "St Helens Bridge", to: "Elsemere Junction", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Elsemere Junction", to: "Morganstown", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Morganstown", to: "Leighton Stepford Road", time: 4, operator: OPERATORS.EXPRESS },
+  { from: "Benton", to: "Leighton Stepford Road", time: 4, operator: OPERATORS.EXPRESS },
+  { from: "Leighton Stepford Road", to: "Leighton City", time: 2, operator: OPERATORS.EXPRESS },
+  { from: "Leighton City", to: "Edgemead", time: 2, operator: OPERATORS.EXPRESS },
+  { from: "Edgemead", to: "Westercoast", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Westercoast", to: "Westwyvern", time: 4, operator: OPERATORS.EXPRESS },
+  { from: "Westwyvern", to: "Northshore", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Northshore", to: "Llyn-by-the-Sea", time: 4, operator: OPERATORS.EXPRESS },
+
+  // Branche Rayleigh Bay (saute Westercoast)
+  { from: "Edgemead", to: "Rayleigh Bay", time: 4, operator: OPERATORS.EXPRESS },
+  { from: "Westwyvern", to: "Rayleigh Bay", time: 3, operator: OPERATORS.EXPRESS },
+
+  // Branche Newry via Morganstown
+  { from: "Morganstown", to: "Benton", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Benton", to: "Eden Quay", time: 3, operator: OPERATORS.EXPRESS },
+  { from: "Eden Quay", to: "Newry", time: 2, operator: OPERATORS.EXPRESS },
+  { from: "Newry", to: "Newry Harbour", time: 2, operator: OPERATORS.EXPRESS },
+
+  // Airlink
+  { from: "Stepford Central", to: "Airport Central", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Stepford Central", to: "Stepford East", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Stepford East", to: "Elsemere Junction", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Elsemere Junction", to: "Morganstown", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Morganstown", to: "Airport Central", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Airport Central", to: "Airport Parkway", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Airport Parkway", to: "Berrily", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Berrily", to: "Airport Parkway", time: 3, operator: OPERATORS.AIRLINK }, // sens inverse
+  { from: "Airport Parkway", to: "Terminal 1", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Terminal 1", to: "Terminal 2", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Terminal 2", to: "Terminal 3", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Airport Central", to: "Water Newton", time: 3, operator: OPERATORS.AIRLINK },
+  { from: "Water Newton", to: "LSR", time: 3, operator: OPERATORS.AIRLINK }
+];
+
+// Construire un graphe bidirectionnel
+const graph = {};
+function addEdge(from, to, time, operator) {
+  if (!graph[from]) graph[from] = [];
+  if (!graph[to]) graph[to] = [];
+  graph[from].push({ station: to, time, operator });
+  graph[to].push({ station: from, time, operator });
+}
+lines.forEach(line => addEdge(line.from, line.to, line.time, line.operator));
+
+// Remplir les menus déroulants
 const startSelect = document.getElementById("start");
 const endSelect = document.getElementById("end");
-const resultDiv = document.getElementById("result");
+gares.forEach(g => {
+  let option1 = document.createElement("option");
+  option1.value = g;
+  option1.textContent = g;
+  startSelect.appendChild(option1);
 
-gares.forEach(gare => {
-  const optionStart = document.createElement("option");
-  optionStart.value = gare;
-  optionStart.textContent = gare;
-  startSelect.appendChild(optionStart);
-
-  const optionEnd = document.createElement("option");
-  optionEnd.value = gare;
-  optionEnd.textContent = gare;
-  endSelect.appendChild(optionEnd);
+  let option2 = document.createElement("option");
+  option2.value = g;
+  option2.textContent = g;
+  endSelect.appendChild(option2);
 });
 
-document.getElementById("calculate").onclick = () => {
+// Algorithme pour trouver l’itinéraire le plus rapide avec jusqu’à 3 correspondances max
+// Recherche en largeur avec priorité à moins de correspondances et moins de temps total
+
+function findRoutes(start, end, maxChanges = 3) {
+  const routes = [];
+  const queue = [{
+    path: [start],
+    times: [],
+    operators: [],
+    changes: 0,
+    currentOperator: null,
+    totalTime: 0
+  }];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const lastStation = current.path[current.path.length -1];
+
+    if (lastStation === end) {
+      routes.push(current);
+      if (routes.length >= 10) break; // limite les résultats pour performance
+      continue;
+    }
+
+    if (current.path.length > 50) continue; // éviter boucle infinie
+
+    for (const neighbor of graph[lastStation] || []) {
+      if (current.path.includes(neighbor.station)) continue; // éviter cycle
+
+      // calcul des correspondances
+      let changes = current.changes;
+      if (current.currentOperator !== null && current.currentOperator !== neighbor.operator) {
+        changes++;
+        if (changes > maxChanges) continue; // trop de correspondances
+      }
+
+      const newPath = current.path.concat([neighbor.station]);
+      const newTimes = current.times.concat([neighbor.time]);
+      const newOperators = current.operators.concat([neighbor.operator]);
+      const newTotalTime = current.totalTime + neighbor.time;
+      queue.push({
+        path: newPath,
+        times: newTimes,
+        operators: newOperators,
+        changes: changes,
+        currentOperator: neighbor.operator,
+        totalTime: newTotalTime
+      });
+    }
+  }
+
+  // Trier les routes par nombre de correspondances, puis par temps total
+  routes.sort((a, b) => {
+    if (a.changes !== b.changes) return a.changes - b.changes;
+    return a.totalTime - b.totalTime;
+  });
+
+  return routes.slice(0, 3); // garder seulement les 3 meilleures
+}
+
+// Fonction d’affichage simple et claire
+function formatRoute(route) {
+  const { path, times, operators, changes } = route;
+  let result = "";
+  for (let i=0; i < path.length; i++) {
+    if (i === 0) {
+      result += `Monter à ${path[i]}\n`;
+    } else if (i === path.length -1) {
+      result += `Descendre à ${path[i]}\n`;
+    } else {
+      result += `→ ${path[i]}\n`;
+    }
+  }
+
+  // Afficher les correspondances
+  if (changes > 0) {
+    result += "\nCorrespondances à :\n";
+    for (let i=1; i < path.length-1; i++) {
+      if (operators[i] !== operators[i-1]) {
+        result += ` - Changer de train à ${path[i]}\n`;
+      }
+    }
+  }
+  result += `\nOpérateurs utilisés : ${[...new Set(operators)].join(", ")}`;
+  return result;
+}
+
+// Gestion du clic sur le bouton calculer
+document.getElementById("calculate").addEventListener("click", () => {
   const start = startSelect.value;
   const end = endSelect.value;
+
   if (start === end) {
-    resultDiv.textContent = "La gare de départ et d'arrivée doivent être différentes.";
-  } else {
-    resultDiv.textContent = `Tu as choisi : départ = ${start}, arrivée = ${end}`;
+    document.getElementById("result").textContent = "La gare de départ et d'arrivée sont identiques.";
+    return;
   }
-};
+
+  const routes = findRoutes(start, end, 3);
+  if (routes.length === 0) {
+    document.getElementById("result").textContent = "Aucun itinéraire trouvé.";
+    return;
+  }
+
+  let output = `Itinéraires les plus rapides entre ${start} et ${end} :\n\n`;
+  routes.forEach((route, i) => {
+    output += `Option ${i+1} (Durée estimée : ${route.totalTime} min, Correspondances : ${route.changes}) :\n`;
+    output += formatRoute(route);
+    output += "\n\n";
+  });
+
+  document.getElementById("result").textContent = output;
+});
 </script>
 
 </body>
