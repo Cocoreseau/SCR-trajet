@@ -1,149 +1,125 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculateur d'itinéraire Stepford Express</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; }
-  label, select, button { font-size: 1.1em; margin: 0.5em 0; }
-  #result { margin-top: 1em; white-space: pre-wrap; background: #f0f0f0; padding: 1em; border-radius: 5px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stepford Route Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      color: #C71585;
+    }
+    label, select, button {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    select, button {
+      padding: 8px;
+    }
+    .route {
+      border: 2px solid #C71585;
+      background-color: #fff0f5;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+    .stop-check {
+      font-size: 14px;
+      margin-left: 10px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
+  <h1>Itinéraire Stepford Express</h1>
+  <label for="from">Départ :</label>
+  <select id="from"></select>
+  <br>
+  <label for="to">Arrivée :</label>
+  <select id="to"></select>
+  <br>
+  <button onclick="findRoute()">Trouver l'itinéraire</button>
 
-<h1>Calculateur d'itinéraire Stepford Express</h1>
+  <div id="result" class="route"></div>
 
-<label for="start">Gare de départ :</label><br />
-<select id="start"></select>
+  <script>
+    const stations = [
+      "Stepford Central", "St Helens Bridge", "Benton", "Elsemere Junction", "Morganstown",
+      "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
+      "Northshore", "Llyn-by-the-Sea", "Eden Quay", "Newry", "Newry Harbour", "Rayleigh Bay"
+    ];
 
-<br />
+    const lines = {
+      stepford_express_main: [
+        "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
+        "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea"
+      ],
+      stepford_express_morganstown: [
+        "Stepford Central", "St Helens Bridge", "Elsemere Junction", "Morganstown",
+        "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast",
+        "Westwyvern", "Northshore", "Llyn-by-the-Sea"
+      ],
+      stepford_express_rayleigh_bay: [
+        "Llyn-by-the-Sea", "Northshore", "Westwyvern", "Edgemead", "Rayleigh Bay"
+      ],
+      stepford_express_newry1: [
+        "Leighton City", "Leighton Stepford Road", "Benton", "Eden Quay", "Newry"
+      ],
+      stepford_express_newry2: [
+        "Llyn-by-the-Sea", "Westwyvern", "Leighton City", "Leighton Stepford Road", "Benton", "Newry", "Newry Harbour"
+      ],
+      stepford_express_newry3: [
+        "Llyn-by-the-Sea", "Northshore", "Westercoast", "Leighton City",
+        "Leighton Stepford Road", "Morganstown", "Benton", "Newry"
+      ]
+    };
 
-<label for="end">Gare d'arrivée :</label><br />
-<select id="end"></select>
+    const fromSelect = document.getElementById("from");
+    const toSelect = document.getElementById("to");
+    stations.forEach(station => {
+      const option1 = document.createElement("option");
+      option1.value = option1.textContent = station;
+      fromSelect.appendChild(option1);
+      const option2 = document.createElement("option");
+      option2.value = option2.textContent = station;
+      toSelect.appendChild(option2);
+    });
 
-<br />
+    function findRoute() {
+      const from = fromSelect.value;
+      const to = toSelect.value;
+      let found = false;
+      let output = "";
 
-<button id="calcBtn">Calculer l'itinéraire</button>
+      for (const [lineName, stops] of Object.entries(lines)) {
+        const fromIndex = stops.indexOf(from);
+        const toIndex = stops.indexOf(to);
 
-<div id="result"></div>
+        if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+          found = true;
+          const slice = fromIndex < toIndex ?
+            stops.slice(fromIndex, toIndex + 1) :
+            stops.slice(toIndex, fromIndex + 1).reverse();
 
-<script>
-// Liste des gares (uniques, tirées du réseau donné)
-const stations = [
-  "Stepford Central", "St Helens Bridge", "Benton", "Elsemere Junction", "Morganstown",
-  "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
-  "Northshore", "Llyn-by-the-Sea", "Rayleigh Bay", "Eden Quay", "Newry", "Newry Harbour"
-];
-
-// Réseau Stepford Express (bidirectionnel)
-const edges = [
-  ["Stepford Central", "St Helens Bridge", 3],
-  ["St Helens Bridge", "Benton", 3],
-  ["St Helens Bridge", "Elsemere Junction", 3],
-  ["Elsemere Junction", "Morganstown", 3],
-  ["Morganstown", "Leighton Stepford Road", 4],
-  ["Benton", "Leighton Stepford Road", 4],
-  ["Leighton Stepford Road", "Leighton City", 2],
-  ["Leighton City", "Edgemead", 2],
-  ["Edgemead", "Westercoast", 3],
-  ["Westercoast", "Westwyvern", 4],
-  ["Westwyvern", "Northshore", 3],
-  ["Northshore", "Llyn-by-the-Sea", 4],
-  ["Edgemead", "Rayleigh Bay", 4],
-  ["Morganstown", "Benton", 3],
-  ["Benton", "Eden Quay", 3],
-  ["Eden Quay", "Newry", 2],
-  ["Newry", "Newry Harbour", 2]
-];
-
-// Construire un graphe pour Dijkstra
-const graph = {};
-for (const [from, to, time] of edges) {
-  if (!graph[from]) graph[from] = [];
-  if (!graph[to]) graph[to] = [];
-  graph[from].push({node: to, time});
-  graph[to].push({node: from, time});
-}
-
-// Remplir les select avec les gares
-const startSelect = document.getElementById("start");
-const endSelect = document.getElementById("end");
-
-function populateSelect(sel) {
-  stations.forEach(station => {
-    const opt = document.createElement("option");
-    opt.value = station;
-    opt.textContent = station;
-    sel.appendChild(opt);
-  });
-}
-
-populateSelect(startSelect);
-populateSelect(endSelect);
-
-// Dijkstra en JS pour plus court temps
-function dijkstra(start, end) {
-  const times = {};
-  const prev = {};
-  const visited = new Set();
-  stations.forEach(s => times[s] = Infinity);
-  times[start] = 0;
-
-  while (visited.size < stations.length) {
-    let curr = null;
-    let currTime = Infinity;
-    for (const s of stations) {
-      if (!visited.has(s) && times[s] < currTime) {
-        curr = s;
-        currTime = times[s];
-      }
-    }
-    if (curr === null) break;
-    if (curr === end) break;
-
-    visited.add(curr);
-    for (const {node, time} of graph[curr]) {
-      if (!visited.has(node)) {
-        const newTime = times[curr] + time;
-        if (newTime < times[node]) {
-          times[node] = newTime;
-          prev[node] = curr;
+          output += `<strong>Stepford Express (${lineName.replace('stepford_express_', '').replaceAll('_', ' ')})</strong><br>`;
+          slice.forEach(station => {
+            output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
+          });
+          break;
         }
       }
+
+      if (!found) {
+        output = "Aucune liaison directe trouvée avec Stepford Express. Veuillez essayer d'autres gares ou prévoir une correspondance.";
+      }
+
+      document.getElementById("result").innerHTML = output;
     }
-  }
-
-  // Construire le chemin
-  if (times[end] === Infinity) return null;
-
-  const path = [];
-  let cur = end;
-  while (cur !== undefined) {
-    path.unshift(cur);
-    cur = prev[cur];
-  }
-  return {path, duration: times[end]};
-}
-
-document.getElementById("calcBtn").onclick = () => {
-  const start = startSelect.value;
-  const end = endSelect.value;
-  if (start === end) {
-    document.getElementById("result").textContent = "La gare de départ et d'arrivée sont identiques.";
-    return;
-  }
-  const result = dijkstra(start, end);
-  if (!result) {
-    document.getElementById("result").textContent = "Aucun itinéraire trouvé.";
-  } else {
-    let text = `Itinéraire le plus rapide entre\n${start} et ${end} :\n\n`;
-    text += result.path.join(" → ") + "\n";
-    text += `\nDurée estimée : ${result.duration} minutes`;
-    document.getElementById("result").textContent = text;
-  }
-};
-</script>
-
+  </script>
 </body>
 </html>
