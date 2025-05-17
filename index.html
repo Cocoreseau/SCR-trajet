@@ -1,125 +1,183 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stepford Route Finder</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      color: #333;
-      padding: 20px;
-    }
-    h1 {
-      color: #C71585;
-    }
-    label, select, button {
-      font-size: 16px;
-      margin: 10px 0;
-    }
-    select, button {
-      padding: 8px;
-    }
-    .route {
-      border: 2px solid #C71585;
-      background-color: #fff0f5;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 10px;
-    }
-    .stop-check {
-      font-size: 14px;
-      margin-left: 10px;
-      color: #888;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Itinéraire Stepford Express avec correspondances</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 20px;
+  }
+  h1 {
+    color: #C71585;
+  }
+  label, select, button {
+    font-size: 16px;
+    margin: 10px 0;
+  }
+  select, button {
+    padding: 8px;
+  }
+  .route {
+    border: 2px solid #C71585;
+    background-color: #fff0f5;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 10px;
+  }
+  .stop-check {
+    font-size: 14px;
+    margin-left: 10px;
+    color: #888;
+  }
+  .transfer {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #ffe6f0;
+    border: 1px solid #C71585;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #9b0068;
+  }
+</style>
 </head>
 <body>
-  <h1>Itinéraire Stepford Express</h1>
-  <label for="from">Départ :</label>
-  <select id="from"></select>
-  <br>
-  <label for="to">Arrivée :</label>
-  <select id="to"></select>
-  <br>
-  <button onclick="findRoute()">Trouver l'itinéraire</button>
+<h1>Itinéraire Stepford Express</h1>
+<label for="from">Départ :</label>
+<select id="from"></select>
+<br />
+<label for="to">Arrivée :</label>
+<select id="to"></select>
+<br />
+<button onclick="findRoute()">Trouver l'itinéraire</button>
 
-  <div id="result" class="route"></div>
+<div id="result" class="route"></div>
 
-  <script>
-    const stations = [
-      "Stepford Central", "St Helens Bridge", "Benton", "Elsemere Junction", "Morganstown",
-      "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
-      "Northshore", "Llyn-by-the-Sea", "Eden Quay", "Newry", "Newry Harbour", "Rayleigh Bay"
-    ];
+<script>
+  const stations = [
+    "Stepford Central", "St Helens Bridge", "Benton", "Elsemere Junction", "Morganstown",
+    "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
+    "Northshore", "Llyn-by-the-Sea", "Eden Quay", "Newry", "Newry Harbour", "Rayleigh Bay"
+  ];
 
-    const lines = {
-      stepford_express_main: [
-        "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
-        "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea"
-      ],
-      stepford_express_morganstown: [
-        "Stepford Central", "St Helens Bridge", "Elsemere Junction", "Morganstown",
-        "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast",
-        "Westwyvern", "Northshore", "Llyn-by-the-Sea"
-      ],
-      stepford_express_rayleigh_bay: [
-        "Llyn-by-the-Sea", "Northshore", "Westwyvern", "Edgemead", "Rayleigh Bay"
-      ],
-      stepford_express_newry1: [
-        "Leighton City", "Leighton Stepford Road", "Benton", "Eden Quay", "Newry"
-      ],
-      stepford_express_newry2: [
-        "Llyn-by-the-Sea", "Westwyvern", "Leighton City", "Leighton Stepford Road", "Benton", "Newry", "Newry Harbour"
-      ],
-      stepford_express_newry3: [
-        "Llyn-by-the-Sea", "Northshore", "Westercoast", "Leighton City",
-        "Leighton Stepford Road", "Morganstown", "Benton", "Newry"
-      ]
-    };
+  const lines = {
+    stepford_express_main: [
+      "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
+      "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea"
+    ],
+    stepford_express_morganstown: [
+      "Stepford Central", "St Helens Bridge", "Elsemere Junction", "Morganstown",
+      "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast",
+      "Westwyvern", "Northshore", "Llyn-by-the-Sea"
+    ],
+    stepford_express_rayleigh_bay: [
+      "Llyn-by-the-Sea", "Northshore", "Westwyvern", "Edgemead", "Rayleigh Bay"
+    ],
+    stepford_express_newry1: [
+      "Leighton City", "Leighton Stepford Road", "Benton", "Eden Quay", "Newry"
+    ],
+    stepford_express_newry2: [
+      "Llyn-by-the-Sea", "Westwyvern", "Leighton City", "Leighton Stepford Road", "Benton", "Newry", "Newry Harbour"
+    ],
+    stepford_express_newry3: [
+      "Llyn-by-the-Sea", "Northshore", "Westercoast", "Leighton City",
+      "Leighton Stepford Road", "Morganstown", "Benton", "Newry"
+    ]
+  };
 
-    const fromSelect = document.getElementById("from");
-    const toSelect = document.getElementById("to");
-    stations.forEach(station => {
-      const option1 = document.createElement("option");
-      option1.value = option1.textContent = station;
-      fromSelect.appendChild(option1);
-      const option2 = document.createElement("option");
-      option2.value = option2.textContent = station;
-      toSelect.appendChild(option2);
-    });
+  const fromSelect = document.getElementById("from");
+  const toSelect = document.getElementById("to");
 
-    function findRoute() {
-      const from = fromSelect.value;
-      const to = toSelect.value;
-      let found = false;
-      let output = "";
+  // Remplir les sélecteurs
+  stations.forEach(station => {
+    const optFrom = document.createElement("option");
+    optFrom.value = station;
+    optFrom.textContent = station;
+    fromSelect.appendChild(optFrom);
 
-      for (const [lineName, stops] of Object.entries(lines)) {
-        const fromIndex = stops.indexOf(from);
-        const toIndex = stops.indexOf(to);
+    const optTo = document.createElement("option");
+    optTo.value = station;
+    optTo.textContent = station;
+    toSelect.appendChild(optTo);
+  });
 
-        if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-          found = true;
-          const slice = fromIndex < toIndex ?
-            stops.slice(fromIndex, toIndex + 1) :
-            stops.slice(toIndex, fromIndex + 1).reverse();
+  function getPath(lineStops, start, end) {
+    const startIndex = lineStops.indexOf(start);
+    const endIndex = lineStops.indexOf(end);
+    if (startIndex === -1 || endIndex === -1) return null;
+    if (startIndex === endIndex) return null;
+    return startIndex < endIndex ?
+      lineStops.slice(startIndex, endIndex + 1) :
+      lineStops.slice(endIndex, startIndex + 1).reverse();
+  }
 
-          output += `<strong>Stepford Express (${lineName.replace('stepford_express_', '').replaceAll('_', ' ')})</strong><br>`;
-          slice.forEach(station => {
-            output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
-          });
-          break;
+  function findRoute() {
+    const from = fromSelect.value;
+    const to = toSelect.value;
+    let output = "";
+
+    if(from === to) {
+      output = "Le départ et l'arrivée sont identiques.";
+      document.getElementById("result").innerHTML = output;
+      return;
+    }
+
+    // Chercher trajet direct
+    for (const [lineName, stops] of Object.entries(lines)) {
+      const directPath = getPath(stops, from, to);
+      if (directPath) {
+        output += `<strong>Itinéraire direct Stepford Express (${lineName.replace('stepford_express_', '').replaceAll('_', ' ')})</strong><br>`;
+        directPath.forEach(station => {
+          output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
+        });
+        document.getElementById("result").innerHTML = output;
+        return;
+      }
+    }
+
+    // Si pas direct, chercher une correspondance simple (1 changement)
+    // On va chercher une gare commune entre une ligne contenant 'from' et une ligne contenant 'to'
+    const linesWithFrom = [];
+    const linesWithTo = [];
+
+    for (const [lineName, stops] of Object.entries(lines)) {
+      if (stops.includes(from)) linesWithFrom.push({lineName, stops});
+      if (stops.includes(to)) linesWithTo.push({lineName, stops});
+    }
+
+    for (const fromLine of linesWithFrom) {
+      for (const toLine of linesWithTo) {
+        // Trouver gare commune
+        const commonStations = fromLine.stops.filter(st => toLine.stops.includes(st));
+        for (const transferStation of commonStations) {
+          if(transferStation !== from && transferStation !== to) {
+            const segment1 = getPath(fromLine.stops, from, transferStation);
+            const segment2 = getPath(toLine.stops, transferStation, to);
+            if(segment1 && segment2) {
+              output += `<strong>Itinéraire Stepford Express avec correspondance</strong><br>`;
+              output += `<div>Départ ligne <em>${fromLine.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+              segment1.forEach(station => {
+                output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
+              });
+              output += `<div class='transfer'>🚉 Changer de train à <strong>${transferStation}</strong></div>`;
+              output += `<div>Prendre ligne <em>${toLine.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+              segment2.forEach(station => {
+                output += `→ ${station} <span class='stop-check'>✅ Vérifiez si le train s’arrête à ${station}</span><br>`;
+              });
+              document.getElementById("result").innerHTML = output;
+              return;
+            }
+          }
         }
       }
-
-      if (!found) {
-        output = "Aucune liaison directe trouvée avec Stepford Express. Veuillez essayer d'autres gares ou prévoir une correspondance.";
-      }
-
-      document.getElementById("result").innerHTML = output;
     }
-  </script>
+
+    output = "Aucune liaison directe ou avec une correspondance simple trouvée. Essayez d'autres gares.";
+    document.getElementById("result").innerHTML = output;
+  }
+</script>
 </body>
 </html>
