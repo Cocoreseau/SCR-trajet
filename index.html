@@ -35,7 +35,7 @@ const lines = [
     operator: "Stepford Express",
     operatorClass: "operator-express",
     stations: ["Lyn-by-the-Sea", "Northshore", "Westwyvern", "Westercoast", "Edgemead", "Leighton City", "Leighton Stepford Road", "Benton", "St Helens Bridge", "Stepford Central"],
-    times: [4,3,4,3,2,4,4,3,3]  // temps entre chaque paire de gares successives
+    times: [4,3,4,3,2,4,4,3,3]
   },
   {
     name: "Newry 2",
@@ -83,118 +83,169 @@ function getLinesForStation(station) {
   return lines.filter(line => line.stations.includes(station));
 }
 
-// Trouver un segment de ligne entre deux stations dans l’ordre (sens aller ou retour)
+// Trouver segment complet entre 2 gares sur une ligne, si possible (dans les deux sens)
 function getSegment(line, from, to) {
   const idxFrom = line.stations.indexOf(from);
   const idxTo = line.stations.indexOf(to);
   if (idxFrom === -1 || idxTo === -1) return null;
-  let step = idxFrom < idxTo ? 1 : -1;
-  let segmentStations = [];
+
+  const step = idxFrom < idxTo ? 1 : -1;
+  let stations = [];
   for (let i = idxFrom; i !== idxTo + step; i += step) {
-    segmentStations.push(line.stations[i]);
+    stations.push(line.stations[i]);
   }
+  
   // Calcul du temps total sur ce segment
-  let segmentTime = 0;
-  for (let i = 0; i < segmentStations.length -1; i++) {
-    let idxA = line.stations.indexOf(segmentStations[i]);
-    if (step === 1) segmentTime += line.times[idxA];
-    else segmentTime += line.times[idxA -1]; // pour sens inverse
+  let time = 0;
+  for (let i = 0; i < stations.length - 1; i++) {
+    const idxA = line.stations.indexOf(stations[i]);
+    if (step === 1) time += line.times[idxA];
+    else time += line.times[idxA - 1];
   }
-  return { stations: segmentStations, time: segmentTime, operator: line.operator, operatorClass: line.operatorClass, lineName: line.name };
+  return { stations, time, operator: line.operator, operatorClass: line.operatorClass, lineName: line.name };
 }
 
-// Recherche d'itinéraire avec jusqu'à 3 correspondances max
-// Algorithme simple : recherche en profondeur limitée
+// Recherche d'itinéraires avec max 3 correspondances, en privilégiant directs
 function findRoutes(start, end, maxChanges = 3) {
   let results = [];
+
+  // Recherche directe avant tout
+  for (let line of lines) {
+    let segment = getSegment(line, start, end);
+    if (segment) {
+      results.push({
+        route: [segment],
+        totalTime: segment.time,
+        changes: 0
+      });
+      // Trajet direct trouvé, on retourne de suite
+      return results;
+    }
+  }
+
+  // Sinon, recherche avec correspondances par BFS limitée
+  let queue = [];
+  // Chaque état: { station, route: [segments], changesLeft, totalTime }
+  // On commence par chaque ligne contenant start
+  getLinesForStation(start).forEach(line => {
+    queue.push({
+      station: start,
+      line,
+      route: [{
+        stations: [start],
+        time: 0,
+        operator: line.operator,
+        operatorClass: line.operatorClass,
+        lineName: line.name
+      }],
+      changesLeft: maxChanges,
+      totalTime: 0
+    });
+  });
+
   let visited = new Set();
 
-  function recurse(currentStation, currentLine, routeSoFar, timeSoFar, changesLeft) {
-    if (routeSoFar.length > 100) return; // sécurité anti boucle
+  while(queue.length > 0) {
+    let state = queue.shift();
+    let { station, line, route, changesLeft, totalTime } = state;
+    let segment = route[route.length - 1];
 
-    if (currentStation === end) {
-      results.push({ route: routeSoFar, totalTime: timeSoFar, changes: maxChanges - changesLeft });
-      return;
+    if (station === end) {
+      results.push({ route, totalTime, changes: maxChanges - changesLeft });
+      if(results.length >= 3) break; // on garde max 3 résultats
+      continue;
     }
 
-    // Si on est sur une ligne, avancer dessus
-    if (currentLine) {
-      const idx = currentLine.stations.indexOf(currentStation);
-      // Explorer vers la prochaine station dans les 2 sens
-      let nextStations = [];
-      if (idx < currentLine.stations.length -1) nextStations.push(currentLine.stations[idx+1]);
-      if (idx > 0) nextStations.push(currentLine.stations[idx-1]);
+    // Trouver index actuelle dans la ligne
+    const idxStation = line.stations.indexOf(station);
 
-      for (let next of nextStations) {
-        if (visited.has(currentStation + '>' + next + '|' + currentLine.name)) continue;
-        visited.add(currentStation + '>' + next + '|' + currentLine.name);
+    // Avancer sur la ligne (dans les 2 directions)
+    const nextIndices = [];
+    if (idxStation < line.stations.length - 1) nextIndices.push(idxStation + 1);
+    if (idxStation > 0) nextIndices.push(idxStation - 1);
 
-        // Prolonger le segment actuel
-        let lastSegment = routeSoFar[routeSoFar.length -1];
-        if (lastSegment.lineName === currentLine.name) {
-          // étendre la stations
-          lastSegment.stations.push(next);
-          // Ajouter temps entre currentStation et next
-          const idxA = currentLine.stations.indexOf(currentStation);
-          let t = 0;
-          if (idx < currentLine.stations.indexOf(next)) t = currentLine.times[idxA];
-          else t = currentLine.times[idxA -1];
-          lastSegment.time += t;
+    for (const nextIdx of nextIndices) {
+      const nextStation = line.stations[nextIdx];
+      const edgeId = `${station}->${nextStation}@${line.name}`;
+      if (visited.has(edgeId)) continue;
 
-          recurse(next, currentLine, routeSoFar, timeSoFar + t, changesLeft);
+      visited.add(edgeId);
 
-          // revenir en arrière (backtrack)
-          lastSegment.stations.pop();
-          lastSegment.time -= t;
-        } else {
-          // nouveau segment (normallement pas possible ici)
-        }
-        visited.delete(currentStation + '>' + next + '|' + currentLine.name);
-      }
+      // Calcul temps segment entre station et nextStation
+      let edgeTime = 0;
+      if (nextIdx > idxStation) edgeTime = line.times[idxStation];
+      else edgeTime = line.times[nextIdx];
 
-      // Essayer de changer de ligne (correspondance)
-      if (changesLeft > 0) {
-        const linesAtStation = getLinesForStation(currentStation);
-        for (let line2 of linesAtStation) {
-          if (line2.name === currentLine.name) continue; // même ligne, skip
-          if (visited.has(currentStation + '|' + line2.name)) continue;
-          visited.add(currentStation + '|' + line2.name);
-          // Commencer un nouveau segment
-          recurse(currentStation, line2, [...routeSoFar, { lineName: line2.name, operator: line2.operator, operatorClass: line2.operatorClass, stations: [currentStation], time: 0 }], timeSoFar, changesLeft -1);
-          visited.delete(currentStation + '|' + line2.name);
-        }
-      }
+      // Étendre le segment courant
+      const newRoute = JSON.parse(JSON.stringify(route)); // clone profond
+      newRoute[newRoute.length -1].stations.push(nextStation);
+      newRoute[newRoute.length -1].time += edgeTime;
 
-    } else {
-      // pas de ligne actuelle : on démarre sur une ligne contenant la station start
-      const linesAtStation = getLinesForStation(currentStation);
-      for (let line of linesAtStation) {
-        if (visited.has(currentStation + '|' + line.name)) continue;
-        visited.add(currentStation + '|' + line.name);
-        recurse(currentStation, line, [{ lineName: line.name, operator: line.operator, operatorClass: line.operatorClass, stations: [currentStation], time: 0 }], timeSoFar, changesLeft);
-        visited.delete(currentStation + '|' + line.name);
+      queue.push({
+        station: nextStation,
+        line,
+        route: newRoute,
+        changesLeft,
+        totalTime: totalTime + edgeTime
+      });
+    }
+
+    // Changer de ligne (correspondance) possible seulement si changesLeft > 0
+    if (changesLeft > 0) {
+      const linesHere = getLinesForStation(station);
+      for (let newLine of linesHere) {
+        if (newLine.name === line.name) continue;
+        const stateId = `${station}@${newLine.name}#${changesLeft-1}`;
+        if (visited.has(stateId)) continue;
+
+        visited.add(stateId);
+
+        // Commencer un nouveau segment dans le route
+        const newRoute = JSON.parse(JSON.stringify(route));
+        newRoute.push({
+          stations: [station],
+          time: 0,
+          operator: newLine.operator,
+          operatorClass: newLine.operatorClass,
+          lineName: newLine.name
+        });
+
+        queue.push({
+          station,
+          line: newLine,
+          route: newRoute,
+          changesLeft: changesLeft - 1,
+          totalTime: totalTime
+        });
       }
     }
   }
 
-  recurse(start, null, [], 0, maxChanges);
-  // Trier par temps total asc
+  // Trier par temps
   results.sort((a,b) => a.totalTime - b.totalTime);
-  return results.slice(0,3); // garder max 3 options
+  return results.slice(0, 3);
 }
 
-// Formatage sortie
+// Formatage de l'itinéraire pour affichage clair
 function formatRoute(routeObj) {
   let output = "";
-  routeObj.route.forEach((segment, i) => {
-    output += `\n${i === 0 ? "Monter à" : "Changer de train à"} : ${segment.stations[0]} (Ligne: ${segment.lineName}, Opérateur: ${segment.operator})\n`;
-    for (let j=1; j < segment.stations.length -1; j++) {
-      output += `  → ${segment.stations[j]}\n`;
+  routeObj.route.forEach((segment, idx) => {
+    if(idx === 0) {
+      output += `Monter à : ${segment.stations[0]} (Ligne: ${segment.lineName}, Opérateur: ${segment.operator})\n`;
+    } else {
+      output += `\nChanger de train à : ${segment.stations[0]} (Ligne: ${segment.lineName}, Opérateur: ${segment.operator})\n`;
+      output += `Monter à : ${segment.stations[0]} (Ligne: ${segment.lineName}, Opérateur: ${segment.operator})\n`;
     }
+
+    // Afficher stations intermédiaires en italique (tout sauf premier et dernier)
+    for(let i=1; i < segment.stations.length - 1; i++) {
+      output += `   → ${segment.stations[i]}\n`;
+    }
+
     output += `Descendre à : ${segment.stations[segment.stations.length -1]}\n`;
-    output += `Durée segment : ${segment.time} min\n\n`;
+    output += `Durée segment : ${segment.time} min\n`;
   });
-  output += `Durée totale estimée : ${routeObj.totalTime} min\n`;
+  output += `\nDurée totale estimée : ${routeObj.totalTime} min\n`;
   output += `Nombre de correspondances : ${routeObj.changes}\n`;
   return output;
 }
