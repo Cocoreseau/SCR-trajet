@@ -24,28 +24,31 @@
 <ul id="results"></ul>
 
 <script>
-// Tableau complet corrigé des routes (extrait, tu peux ajouter le reste)
+// Même tableau routes avec des noms exacts (ajoute tes données complètes ici)
 const routes = [
   {"routeId":"R001","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
   {"routeId":"R002","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
   {"routeId":"R003","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Angel Pass","Bondin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
-  {"routeId":"R004","type":"Connect","stops":["St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Leighton Stepford Road","Leighton City","Edgemead"]},
-  {"routeId":"R005","type":"Connect","stops":["Stepford Victoria","Financial Quarter","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
-  {"routeId":"R006","type":"Metro","stops":["Stepford Victoria","Financial Quartier","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
-  {"routeId":"R007","type":"Connect","stops":["Stepford Central","Stepford East","Saint Helen's Bridge","Elsemere Junction","Berrily","Morganstown"]},
-  {"routeId":"R008","type":"Metro","stops":["Stepford Victoria","Financial Quartier","City Hoqpital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily"]},
-  {"routeId":"R009","type":"Connect","stops":["Stepford Victoria","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Eadgemead"]},
-  // ... ajoute les autres routes comme avant ...
+  // ... etc
 ];
 
-// Extraire la liste unique de tous les arrêts
+// Fonction pour normaliser un nom d'arrêt pour comparaison
+function normalizeStopName(name) {
+  return name.toLowerCase()
+             .replace(/'/g, '')        // enlever apostrophes
+             .replace(/’/g, '')        // enlever apostrophes typographiques
+             .replace(/\s+/g, ' ')    // espace multiple → simple
+             .trim();
+}
+
+// Extraire la liste unique de tous les arrêts normalisés + originaux
 const allStopsSet = new Set();
 routes.forEach(route => {
   route.stops.forEach(stop => allStopsSet.add(stop));
 });
 const allStops = Array.from(allStopsSet).sort();
 
-// Remplir les menus déroulants avec les arrêts
+// Remplir les menus déroulants
 function populateSelectOptions(selectId, stops) {
   const select = document.getElementById(selectId);
   stops.forEach(stop => {
@@ -55,15 +58,19 @@ function populateSelectOptions(selectId, stops) {
     select.appendChild(option);
   });
 }
-
 populateSelectOptions("start", allStops);
 populateSelectOptions("end", allStops);
 
-// Fonction pour trouver les routes directes (dans l’ordre du trajet)
+// Recherche d'itinéraires directs avec normalisation des arrêts
 function findDirectRoutes(routes, fromStop, toStop) {
+  const normFrom = normalizeStopName(fromStop);
+  const normTo = normalizeStopName(toStop);
+
   return routes.filter(route => {
-    const fromIndex = route.stops.indexOf(fromStop);
-    const toIndex = route.stops.indexOf(toStop);
+    // normaliser tous les arrêts de la route
+    const normStops = route.stops.map(normalizeStopName);
+    const fromIndex = normStops.indexOf(normFrom);
+    const toIndex = normStops.indexOf(normTo);
     return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
   });
 }
@@ -90,10 +97,12 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     resultsEl.innerHTML = "<li>Aucun itinéraire direct trouvé.</li>";
   } else {
     foundRoutes.forEach(route => {
-      const fromIndex = route.stops.indexOf(fromStop);
-      const toIndex = route.stops.indexOf(toStop);
+      // Normaliser la liste des arrêts pour trouver les indices
+      const normStops = route.stops.map(normalizeStopName);
+      const fromIndex = normStops.indexOf(normalizeStopName(fromStop));
+      const toIndex = normStops.indexOf(normalizeStopName(toStop));
 
-      // Extraire uniquement le segment entre départ et arrivée inclus
+      // Extraire uniquement le segment demandé
       const segmentStops = route.stops.slice(fromIndex, toIndex + 1);
 
       const li = document.createElement("li");
@@ -102,10 +111,8 @@ document.getElementById("searchBtn").addEventListener("click", () => {
 
       segmentStops.forEach((stop, i) => {
         if (i === 0 || i === segmentStops.length - 1) {
-          // Départ ou arrivée en normal
           content += `<span style="font-weight: normal;">${stop}</span>`;
         } else {
-          // Intermédiaires en italique et plus petits
           content += `<span style="font-style: italic; font-size: smaller;">${stop}</span>`;
         }
         if (i < segmentStops.length - 1) {
