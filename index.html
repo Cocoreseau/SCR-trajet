@@ -250,4 +250,53 @@ function displayResults(results, start, end) {
     }
     flushSegment();
 
-    // Afficher
+    // Afficher les correspondances
+    if (res.path.length > 2) {
+      // Affiche changement opérateur différent entre segments
+      const opsInPath = [];
+      for (let i=0; i<res.path.length-1; i++){
+        const op = operatorBetween(res.path[i], res.path[i+1]);
+        if (opsInPath.length === 0 || opsInPath[opsInPath.length-1] !== op) opsInPath.push(op);
+      }
+      if (opsInPath.length > 1) {
+        const chgDiv = document.createElement("div");
+        chgDiv.style.marginTop = "10px";
+        chgDiv.style.fontWeight = "bold";
+        chgDiv.textContent = "Correspondances :";
+        container.appendChild(chgDiv);
+        for (let i=1; i<opsInPath.length; i++) {
+          // Trouver gare de correspondance
+          for(let j=1; j<res.path.length-1; j++) {
+            const opPrev = operatorBetween(res.path[j-1], res.path[j]);
+            const opNext = operatorBetween(res.path[j], res.path[j+1]);
+            if (opPrev === opsInPath[i-1] && opNext === opsInPath[i]) {
+              const corDiv = document.createElement("div");
+              corDiv.textContent = `→ Changer de train à ${res.path[j]} (de ${opsInPath[i-1]} à ${opsInPath[i]})`;
+              container.appendChild(corDiv);
+              break;
+            }
+          }
+        }
+      }
+    }
+    if(idx < results.length-1) {
+      const sep = document.createElement("hr");
+      container.appendChild(sep);
+    }
+  });
+}
+
+document.getElementById("calculate").onclick = () => {
+  const start = startSelect.value;
+  const end = endSelect.value;
+  if (start === end) {
+    alert("La gare de départ et d'arrivée doivent être différentes.");
+    return;
+  }
+  const results = findPaths(start, end);
+  displayResults(results, start, end);
+};
+
+</script>
+</body>
+</html>
