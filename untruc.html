@@ -1,34 +1,24 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<title>Planificateur d'itinéraires avec correspondance</title>
-<style>
-  .intermediate {
-    font-style: italic;
-    font-size: 0.9em;
-    color: #555;
-  }
-  .normal {
-    font-style: normal;
-    font-size: 1em;
-    color: black;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Planificateur SCR</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    select, button { margin: 10px 0; padding: 5px; }
+    li { margin-bottom: 10px; }
+    .intermediate { font-style: italic; font-size: 0.9em; }
+  </style>
 </head>
 <body>
 
-<h2>Planificateur d'itinéraires</h2>
+<h2>Planificateur d'itinéraires (max 4 correspondances)</h2>
 
 <label for="start">Départ :</label>
-<select id="start">
-  <option value="">-- Choisir un arrêt --</option>
-</select>
+<select id="start"><option value="">-- Choisir --</option></select>
 
 <label for="end">Arrivée :</label>
-<select id="end">
-  <option value="">-- Choisir un arrêt --</option>
-</select>
+<select id="end"><option value="">-- Choisir --</option></select>
 
 <button id="searchBtn">Chercher itinéraires</button>
 
@@ -36,188 +26,144 @@
 <ul id="results"></ul>
 
 <script>
-// Ton tableau de routes (extrait réduit pour exemple)
-const routes = [
-  {"routeId":"R001","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
-  {"routeId":"R002","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
-  {"routeId":"R003","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Angel Pass","Bondin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
-  {"routeId":"R010","type":"Waterline","stops":["Greenslade","Whitney Green","Morganstown Docks","Port Benton","Benton","West Benton","Faraday Road","Eden Quay","Newry"]},
-  {"routeId":"R011","type":"Waterline","stops":["Connoly","Ashlan Park","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry"]}
-];
+// ⚠️ Mets ici ton tableau 'routes' complet
+const routes = [/* ... Coller ici ton tableau de lignes ... */];
 
-// Normaliser les noms d'arrêt pour comparaison (minuscule + sans accents simples)
-function normalizeStopName(name) {
-  return name.trim().toLowerCase();
-}
-
-// Extraire la liste unique de tous les arrêts
-const allStopsSet = new Set();
+// Construire le graphe
+const stopGraph = {};
 routes.forEach(route => {
-  route.stops.forEach(stop => allStopsSet.add(stop));
-});
-const allStops = Array.from(allStopsSet).sort();
+  const stops = route.stops;
+  for (let i = 0; i < stops.length - 1; i++) {
+    const from = stops[i], to = stops[i + 1];
 
-// Remplir les menus déroulants avec les arrêts
-function populateSelectOptions(selectId, stops) {
-  const select = document.getElementById(selectId);
-  stops.forEach(stop => {
+    if (!stopGraph[from]) stopGraph[from] = [];
+    stopGraph[from].push({ stop: to, route });
+
+    // Graph orienté (on va dans le bon sens)
+  }
+});
+
+// Créer la liste des arrêts uniques
+const allStops = Array.from(new Set(routes.flatMap(r => r.stops))).sort();
+const populateSelect = (id) => {
+  const select = document.getElementById(id);
+  allStops.forEach(stop => {
     const option = document.createElement("option");
     option.value = stop;
     option.textContent = stop;
     select.appendChild(option);
   });
-}
-populateSelectOptions("start", allStops);
-populateSelectOptions("end", allStops);
+};
+populateSelect("start");
+populateSelect("end");
 
-// Chercher routes directes (avec sens)
-function findDirectRoutes(routes, fromStop, toStop) {
-  const normFrom = normalizeStopName(fromStop);
-  const normTo = normalizeStopName(toStop);
-  return routes.filter(route => {
-    const stopsNorm = route.stops.map(normalizeStopName);
-    const fromIndex = stopsNorm.indexOf(normFrom);
-    const toIndex = stopsNorm.indexOf(normTo);
-    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
-  });
-}
+// Recherche avec DFS jusqu'à 4 correspondances
+function findPaths(from, to) {
+  const maxTransfers = 4;
+  const results = [];
 
-// Trouver routes qui passent par un arrêt donné
-function findRoutesPassingStop(routes, stop) {
-  const normStop = normalizeStopName(stop);
-  return routes.filter(route => 
-    route.stops.some(s => normalizeStopName(s) === normStop)
-  );
-}
+  function dfs(currentStop, target, path, visitedStops, usedRoutes, depth) {
+    if (depth > maxTransfers + 1) return;
 
-// Trouver arrêts communs entre deux routes (normalisés)
-function findCommonStopsBetweenRoutes(route1, route2) {
-  const normStops1 = route1.stops.map(normalizeStopName);
-  const normStops2 = new Set(route2.stops.map(normalizeStopName));
-  return normStops1.filter(stop => normStops2.has(stop));
-}
+    if (currentStop === target) {
+      results.push([...path]);
+      return;
+    }
 
-// Chercher itinéraires avec une correspondance (un seul transfert)
-function findRoutesWithOneTransfer(routes, fromStop, toStop) {
-  const normFrom = normalizeStopName(fromStop);
-  const normTo = normalizeStopName(toStop);
+    const neighbors = stopGraph[currentStop] || [];
+    for (const neighbor of neighbors) {
+      const { stop: nextStop, route } = neighbor;
+      const routeId = route.routeId;
 
-  const fromRoutes = findRoutesPassingStop(routes, fromStop);
-  const toRoutes = findRoutesPassingStop(routes, toStop);
+      if (visitedStops.has(nextStop)) continue;
 
-  const possiblePaths = [];
+      const lastRoute = path.length ? path[path.length - 1].route.routeId : null;
+      const routeChanged = routeId !== lastRoute;
 
-  for (const r1 of fromRoutes) {
-    for (const r2 of toRoutes) {
-      // Si c’est la même route et qu’il n’y a pas d’itinéraire direct, on skip
-      if (r1.routeId === r2.routeId) continue;
+      // Limiter les changements de route (max 4 correspondances)
+      const routeChanges = usedRoutes.length + (routeChanged ? 1 : 0);
+      if (routeChanges > maxTransfers + 1) continue;
 
-      const commonStops = findCommonStopsBetweenRoutes(r1, r2);
+      visitedStops.add(nextStop);
+      path.push({ stop: nextStop, route });
 
-      for (const commonStopNorm of commonStops) {
-        const r1StopsNorm = r1.stops.map(normalizeStopName);
-        const r2StopsNorm = r2.stops.map(normalizeStopName);
+      if (routeChanged) usedRoutes.push(routeId);
+      dfs(nextStop, target, path, visitedStops, usedRoutes, depth + 1);
+      if (routeChanged) usedRoutes.pop();
 
-        const fromIndex1 = r1StopsNorm.indexOf(normFrom);
-        const commonIndex1 = r1StopsNorm.indexOf(commonStopNorm);
-        const commonIndex2 = r2StopsNorm.indexOf(commonStopNorm);
-        const toIndex2 = r2StopsNorm.indexOf(normTo);
-
-        if (fromIndex1 === -1 || commonIndex1 === -1 || fromIndex1 >= commonIndex1) continue;
-        if (commonIndex2 === -1 || toIndex2 === -1 || commonIndex2 >= toIndex2) continue;
-
-        // Correspondance valide trouvée
-        possiblePaths.push({
-          firstRoute: r1,
-          transferStop: r1.stops[r1StopsNorm.indexOf(commonStopNorm)],
-          secondRoute: r2
-        });
-      }
+      path.pop();
+      visitedStops.delete(nextStop);
     }
   }
 
-  return possiblePaths;
+  dfs(from, to, [{ stop: from, route: null }], new Set([from]), [], 0);
+  return results;
 }
 
-// Afficher itinéraire (direct ou avec correspondance)
-function displayRoute(route, fromStop, toStop, container) {
-  // Trouver indices des arrêts départ/arrivée dans la route
-  const stopsNorm = route.stops.map(normalizeStopName);
-  const fromIndex = stopsNorm.indexOf(normalizeStopName(fromStop));
-  const toIndex = stopsNorm.indexOf(normalizeStopName(toStop));
-  if (fromIndex === -1 || toIndex === -1) return;
-
-  // Parcourir les arrêts entre fromIndex et toIndex inclus
-  for (let i = fromIndex; i <= toIndex; i++) {
-    const li = document.createElement("li");
-    const stopName = route.stops[i];
-    if (i === fromIndex || i === toIndex) {
-      li.textContent = stopName;
-      li.className = "normal";
-    } else {
-      li.textContent = stopName;
-      li.className = "intermediate";
-    }
-    container.appendChild(li);
-  }
-}
-
-document.getElementById("searchBtn").addEventListener("click", () => {
-  const fromStop = document.getElementById("start").value;
-  const toStop = document.getElementById("end").value;
+// Afficher résultats
+function displayResults(paths) {
   const resultsEl = document.getElementById("results");
   resultsEl.innerHTML = "";
 
-  if (!fromStop || !toStop) {
-    resultsEl.innerHTML = "<li>Merci de choisir un arrêt de départ et un arrêt d'arrivée.</li>";
-    return;
-  }
-  if (fromStop === toStop) {
-    resultsEl.innerHTML = "<li>Le départ et l'arrivée doivent être différents.</li>";
+  if (paths.length === 0) {
+    resultsEl.innerHTML = "<li>Aucun itinéraire trouvé.</li>";
     return;
   }
 
-  // Chercher itinéraire direct
-  const directRoutes = findDirectRoutes(routes, fromStop, toStop);
+  // Trier par longueur de trajet
+  paths.sort((a, b) => a.length - b.length);
 
-  if (directRoutes.length > 0) {
-    directRoutes.forEach(route => {
-      const liTitle = document.createElement("li");
-      liTitle.innerHTML = `<strong>Itinéraire direct - Ligne ${route.routeId} (${route.type}) :</strong>`;
-      resultsEl.appendChild(liTitle);
-      displayRoute(route, fromStop, toStop, resultsEl);
-    });
-    return; // on stoppe si itinéraire direct trouvé
+  const topPaths = paths.slice(0, 3);
+  for (const path of topPaths) {
+    const li = document.createElement("li");
+    let html = "";
+
+    for (let i = 0; i < path.length; i++) {
+      const { stop, route } = path[i];
+      const prevRoute = i > 0 ? path[i - 1].route?.routeId : null;
+      const isNewRoute = route && route.routeId !== prevRoute;
+
+      if (i === 0 || i === path.length - 1) {
+        // Départ ou arrivée
+        html += `<span>${stop}</span>`;
+      } else {
+        // Intermédiaire
+        html += ` → <span class="intermediate">${stop}</span>`;
+      }
+
+      // Afficher la ligne si elle change
+      if (isNewRoute) {
+        html += ` <span style="color: gray">[${route.routeId}]</span>`;
+      }
+    }
+
+    li.innerHTML = html;
+    resultsEl.appendChild(li);
+  }
+}
+
+// Événement
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const from = document.getElementById("start").value;
+  const to = document.getElementById("end").value;
+  const resultsEl = document.getElementById("results");
+
+  if (!from || !to) {
+    resultsEl.innerHTML = "<li>Choisissez un départ et une arrivée.</li>";
+    return;
+  }
+  if (from === to) {
+    resultsEl.innerHTML = "<li>Départ et arrivée doivent être différents.</li>";
+    return;
   }
 
-  // Pas d'itinéraire direct, on cherche avec 1 correspondance
-  const transferRoutes = findRoutesWithOneTransfer(routes, fromStop, toStop);
-
-  if (transferRoutes.length === 0) {
-    resultsEl.innerHTML = "<li>Aucun itinéraire direct ou avec une correspondance trouvé.</li>";
-  } else {
-    transferRoutes.forEach(path => {
-      const liTitle = document.createElement("li");
-      liTitle.innerHTML = `<strong>Itinéraire avec 1 correspondance :</strong>`;
-      resultsEl.appendChild(liTitle);
-
-      // Afficher 1ère partie
-      const liPart1 = document.createElement("li");
-      liPart1.innerHTML = `<em>Ligne ${path.firstRoute.routeId} (${path.firstRoute.type}) de <strong>${fromStop}</strong> à <strong>${path.transferStop}</strong> :</em>`;
-      resultsEl.appendChild(liPart1);
-      displayRoute(path.firstRoute, fromStop, path.transferStop, resultsEl);
-
-      // Afficher 2ème partie
-      const liPart2 = document.createElement("li");
-      liPart2.innerHTML = `<em>Ligne ${path.secondRoute.routeId} (${path.secondRoute.type}) de <strong>${path.transferStop}</strong> à <strong>${toStop}</strong> :</em>`;
-      resultsEl.appendChild(liPart2);
-      displayRoute(path.secondRoute, path.transferStop, toStop, resultsEl);
-    });
-  }
+  resultsEl.innerHTML = "<li>Recherche...</li>";
+  setTimeout(() => {
+    const paths = findPaths(from, to);
+    displayResults(paths);
+  }, 10);
 });
 </script>
 
 </body>
-</html>
-
 </html>
