@@ -2,49 +2,16 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculateur itinéraire - Stepford</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 2em; }
-  label, select, button { font-size: 1rem; margin: 0.5em 0; }
-  select, button { padding: 0.3em; }
-  #result { margin-top: 1.5em; background: #fff; padding: 1em; border-radius: 6px; }
-  .segment {
-    border-left: 6px solid;
-    margin-bottom: 1em;
-    padding-left: 10px;
-  }
-  .step {
-    margin-left: 1.5em;
-    font-size: 0.9rem;
-  }
-  .step.intermediate {
-    font-style: italic;
-    font-size: 0.8rem;
-    color: #555;
-  }
-  .step.operator {
-    font-weight: bold;
-  }
-  .op-stepford-express { border-color: #c080d9; color: #703a9c; }
-  .op-airlink { border-color: #f28c1e; color: #ad5700; }
-</style>
+<title>Test gares</title>
 </head>
 <body>
-<h1>Calculateur d'itinéraire - Stepford</h1>
-
 <label for="start">Gare de départ :</label>
 <select id="start"></select><br/>
 
 <label for="end">Gare d'arrivée :</label>
 <select id="end"></select><br/>
 
-<button id="calculate">Calculer l'itinéraire</button>
-
-<div id="result"></div>
-
 <script>
-// Données gares simplifiées (pour exemple)
 const gares = [
   "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
   "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea",
@@ -52,251 +19,20 @@ const gares = [
   "Airport Central", "Stepford East", "Berrily", "Airport Parkway", "Terminal 1", "Terminal 2", "Terminal 3", "Water Newton", "LSR"
 ];
 
-// Opérateurs avec couleur et id (pour classes CSS)
-const operators = {
-  "Stepford Express": { id: "stepford-express", color: "#c080d9" },
-  "Airlink": { id: "airlink", color: "#f28c1e" }
-};
-
-// Lignes = tableau d'objets : id opérateur, nom, gares ordonnées (sens aller)
-const lignes = [
-  {
-    id: "Stepford Express",
-    gares: [
-      "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road",
-      "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
-      "Northshore", "Llyn-by-the-Sea"
-    ],
-  },
-  {
-    id: "Stepford Express",
-    gares: [
-      "Stepford Central", "St Helens Bridge", "Elsemere Junction", "Morganstown",
-      "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast",
-      "Westwyvern", "Northshore", "Llyn-by-the-Sea"
-    ],
-  },
-  {
-    id: "Airlink",
-    gares: [
-      "Stepford Central", "Airport Central"
-    ]
-  },
-  {
-    id: "Airlink",
-    gares: [
-      "Stepford Central", "Stepford East", "Elsemere Junction", "Morganstown",
-      "Airport Central", "Terminal 1", "Terminal 2"
-    ]
-  },
-  {
-    id: "Airlink",
-    gares: [
-      "Airport Central", "Airport Parkway", "Water Newton", "LSR"
-    ]
-  },
-];
-
-// Construire le graphe global
-// Format: { gare: [ { to, operator } ] }
-const graph = {};
-function addEdge(u, v, operator) {
-  if (!graph[u]) graph[u] = [];
-  if (!graph[v]) graph[v] = [];
-  graph[u].push({ to: v, operator });
-  graph[v].push({ to: u, operator });
-}
-lignes.forEach(line => {
-  for (let i = 0; i < line.gares.length - 1; i++) {
-    addEdge(line.gares[i], line.gares[i + 1], line.id);
-  }
-});
-
-// Remplir les selects
 const startSelect = document.getElementById("start");
 const endSelect = document.getElementById("end");
-gares.forEach(g => {
-  const o1 = document.createElement("option");
-  o1.value = g; o1.textContent = g;
-  const o2 = document.createElement("option");
-  o2.value = g; o2.textContent = g;
-  startSelect.appendChild(o1);
-  endSelect.appendChild(o2);
+
+gares.forEach(gare => {
+  const optionStart = document.createElement("option");
+  optionStart.value = gare;
+  optionStart.textContent = gare;
+  startSelect.appendChild(optionStart);
+
+  const optionEnd = document.createElement("option");
+  optionEnd.value = gare;
+  optionEnd.textContent = gare;
+  endSelect.appendChild(optionEnd);
 });
-
-// Algorithme de recherche (BFS) avec limitation max 3 changements opérateurs différents
-function findPaths(start, end) {
-  const queue = [];
-  // Chaque état: gare, chemin, opérateurs rencontrés (en Set), opérateur courant, nombre changements
-  queue.push({ 
-    gare: start,
-    path: [start],
-    operatorsUsed: new Set(),
-    currentOperator: null,
-    changes: 0
-  });
-  const results = [];
-  const visited = new Set();
-
-  while(queue.length) {
-    const state = queue.shift();
-    if (state.gare === end) {
-      results.push(state);
-      if (results.length >= 3) break; // Limite à 3 solutions
-      continue;
-    }
-    // Eviter les cycles sur même état
-    const visitKey = state.gare + "|" + [...state.operatorsUsed].sort().join(",") + "|" + state.currentOperator + "|" + state.changes;
-    if (visited.has(visitKey)) continue;
-    visited.add(visitKey);
-
-    const neighbors = graph[state.gare] || [];
-    neighbors.forEach(n => {
-      let nextChanges = state.changes;
-      let opsUsed = new Set(state.operatorsUsed);
-      let nextOperator = state.currentOperator;
-
-      if (n.operator !== state.currentOperator) {
-        if (!opsUsed.has(n.operator)) {
-          nextChanges++;
-          opsUsed.add(n.operator);
-        }
-        nextOperator = n.operator;
-      }
-      if (nextChanges > 3) return; // Trop de changements opérateurs
-      if (state.path.includes(n.to)) return; // Evite boucle
-
-      queue.push({
-        gare: n.to,
-        path: [...state.path, n.to],
-        operatorsUsed: opsUsed,
-        currentOperator: nextOperator,
-        changes: nextChanges
-      });
-    });
-  }
-  return results;
-}
-
-// Trouver opérateur pour segment entre deux gares consécutives dans un chemin
-function operatorBetween(a, b) {
-  const edges = graph[a] || [];
-  for (const e of edges) {
-    if (e.to === b) return e.operator;
-  }
-  return null;
-}
-
-// Afficher résultat
-function displayResults(results, start, end) {
-  const container = document.getElementById("result");
-  container.innerHTML = "";
-  if (results.length === 0) {
-    container.textContent = `Aucun itinéraire trouvé entre "${start}" et "${end}".`;
-    return;
-  }
-  results.forEach((res, idx) => {
-    const divSeg = document.createElement("div");
-    divSeg.className = "segment";
-
-    // Parcourir le chemin et grouper par opérateur
-    let lastOp = null;
-    let segmentStations = [];
-    function flushSegment() {
-      if (segmentStations.length === 0) return;
-      // Le segment est du même opérateur
-      const opId = operators[lastOp].id;
-      const segDiv = document.createElement("div");
-      segDiv.className = "segment op-" + opId;
-      // Monter à
-      const firstStation = segmentStations[0];
-      const firstStep = document.createElement("div");
-      firstStep.className = "step operator";
-      firstStep.innerHTML = `<strong>Monter à</strong> <span>${firstStation}</span> <small>(${lastOp})</small>`;
-      segDiv.appendChild(firstStep);
-      // Intermédiaires en italique sauf 1er et dernier
-      for (let i = 1; i < segmentStations.length - 1; i++) {
-        const step = document.createElement("div");
-        step.className = "step intermediate";
-        const opColor = operators[lastOp].color;
-        step.style.color = opColor;
-        step.textContent = segmentStations[i] + ` (${lastOp})`;
-        segDiv.appendChild(step);
-      }
-      // Descendre à
-      if (segmentStations.length > 1) {
-        const lastStation = segmentStations[segmentStations.length - 1];
-        const lastStep = document.createElement("div");
-        lastStep.className = "step operator";
-        lastStep.innerHTML = `<strong>Descendre à</strong> <span>${lastStation}</span> <small>(${lastOp})</small>`;
-        segDiv.appendChild(lastStep);
-      }
-      container.appendChild(segDiv);
-      segmentStations = [];
-    }
-
-    for (let i = 0; i < res.path.length - 1; i++) {
-      const a = res.path[i], b = res.path[i + 1];
-      const op = operatorBetween(a,b);
-      if (op !== lastOp) {
-        flushSegment();
-        lastOp = op;
-      }
-      segmentStations.push(a);
-      if (i === res.path.length - 2) {
-        // Dernière gare
-        segmentStations.push(b);
-      }
-    }
-    flushSegment();
-
-    // Afficher les correspondances
-    if (res.path.length > 2) {
-      // Affiche changement opérateur différent entre segments
-      const opsInPath = [];
-      for (let i=0; i<res.path.length-1; i++){
-        const op = operatorBetween(res.path[i], res.path[i+1]);
-        if (opsInPath.length === 0 || opsInPath[opsInPath.length-1] !== op) opsInPath.push(op);
-      }
-      if (opsInPath.length > 1) {
-        const chgDiv = document.createElement("div");
-        chgDiv.style.marginTop = "10px";
-        chgDiv.style.fontWeight = "bold";
-        chgDiv.textContent = "Correspondances :";
-        container.appendChild(chgDiv);
-        for (let i=1; i<opsInPath.length; i++) {
-          // Trouver gare de correspondance
-          for(let j=1; j<res.path.length-1; j++) {
-            const opPrev = operatorBetween(res.path[j-1], res.path[j]);
-            const opNext = operatorBetween(res.path[j], res.path[j+1]);
-            if (opPrev === opsInPath[i-1] && opNext === opsInPath[i]) {
-              const corDiv = document.createElement("div");
-              corDiv.textContent = `→ Changer de train à ${res.path[j]} (de ${opsInPath[i-1]} à ${opsInPath[i]})`;
-              container.appendChild(corDiv);
-              break;
-            }
-          }
-        }
-      }
-    }
-    if(idx < results.length-1) {
-      const sep = document.createElement("hr");
-      container.appendChild(sep);
-    }
-  });
-}
-
-document.getElementById("calculate").onclick = () => {
-  const start = startSelect.value;
-  const end = endSelect.value;
-  if (start === end) {
-    alert("La gare de départ et d'arrivée doivent être différentes.");
-    return;
-  }
-  const results = findPaths(start, end);
-  displayResults(results, start, end);
-};
-
 </script>
 </body>
 </html>
