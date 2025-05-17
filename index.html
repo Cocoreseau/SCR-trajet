@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Itinéraire Stepford Express avec correspondances</title>
+<title>Itinéraire Stepford Express corrigé</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
+    background: #f9f9f9;
     color: #333;
     padding: 20px;
   }
@@ -23,7 +23,7 @@
   }
   .route {
     border: 2px solid #C71585;
-    background-color: #fff0f5;
+    background: #fff0f5;
     padding: 15px;
     margin-top: 20px;
     border-radius: 10px;
@@ -46,7 +46,7 @@
   .transfer {
     margin: 15px 0;
     padding: 10px;
-    background-color: #ffe6f0;
+    background: #ffe6f0;
     border: 1px solid #C71585;
     border-radius: 8px;
     font-weight: bold;
@@ -101,7 +101,7 @@
   const fromSelect = document.getElementById("from");
   const toSelect = document.getElementById("to");
 
-  // Remplir les sélecteurs
+  // Remplir les selecteurs
   stations.forEach(station => {
     const optFrom = document.createElement("option");
     optFrom.value = station;
@@ -114,6 +114,7 @@
     toSelect.appendChild(optTo);
   });
 
+  // Récupérer segment entre 2 gares (ordre respecté)
   function getPath(lineStops, start, end) {
     const startIndex = lineStops.indexOf(start);
     const endIndex = lineStops.indexOf(end);
@@ -124,18 +125,17 @@
       lineStops.slice(endIndex, startIndex + 1).reverse();
   }
 
+  // Affiche un segment, avec les gares clés en gras et gares intermédiaires en italique
+  // keyStations contient départ, arrivée, correspondance (si any)
   function displaySegment(segment, keyStations) {
-    // keyStations = [start, end, (optionnel) correspondance]
-    // On affiche en gras start, end, correspondance
-    // Les autres en plus petit italique
     let html = "";
     segment.forEach(station => {
       if (keyStations.includes(station)) {
-        // clé (départ, arrivée, correspondance)
-        const cls = keyStations.length > 2 && station === keyStations[1] ? "stop-transfer" : "stop-key";
+        // gare clé (départ, arrivée, correspondance)
+        const cls = (keyStations.length > 2 && station === keyStations[1]) ? "stop-transfer" : "stop-key";
         html += `<div class="${cls}">→ ${station}</div>`;
       } else {
-        // intermédiaire
+        // gare intermédiaire
         html += `<div class="stop-intermediate">→ ${station}</div>`;
       }
     });
@@ -147,13 +147,13 @@
     const to = toSelect.value;
     let output = "";
 
-    if(from === to) {
+    if (from === to) {
       output = "Le départ et l'arrivée sont identiques.";
       document.getElementById("result").innerHTML = output;
       return;
     }
 
-    // Chercher trajet direct
+    // Chercher un trajet direct
     for (const [lineName, stops] of Object.entries(lines)) {
       const directPath = getPath(stops, from, to);
       if (directPath) {
@@ -164,27 +164,26 @@
       }
     }
 
-    // Si pas direct, chercher une correspondance simple (1 changement)
+    // Pas direct, chercher une correspondance simple (1 changement)
     const linesWithFrom = [];
     const linesWithTo = [];
 
     for (const [lineName, stops] of Object.entries(lines)) {
-      if (stops.includes(from)) linesWithFrom.push({lineName, stops});
-      if (stops.includes(to)) linesWithTo.push({lineName, stops});
+      if (stops.includes(from)) linesWithFrom.push({ lineName, stops });
+      if (stops.includes(to)) linesWithTo.push({ lineName, stops });
     }
 
-    // Collecter toutes les correspondances possibles
     const possibleTransfers = [];
 
     for (const fromLine of linesWithFrom) {
       for (const toLine of linesWithTo) {
-        // Trouver gare commune
+        // gare commune entre 2 lignes
         const commonStations = fromLine.stops.filter(st => toLine.stops.includes(st));
         for (const transferStation of commonStations) {
-          if(transferStation !== from && transferStation !== to) {
+          if (transferStation !== from && transferStation !== to) {
             const segment1 = getPath(fromLine.stops, from, transferStation);
             const segment2 = getPath(toLine.stops, transferStation, to);
-            if(segment1 && segment2) {
+            if (segment1 && segment2) {
               possibleTransfers.push({
                 fromLine: fromLine.lineName,
                 toLine: toLine.lineName,
@@ -198,11 +197,11 @@
       }
     }
 
-    if(possibleTransfers.length > 0) {
+    if (possibleTransfers.length > 0) {
       output += `<strong>Itinéraires Stepford Express avec correspondance</strong><br>`;
       possibleTransfers.forEach((transfer, i) => {
         output += `<hr>`;
-        output += `<div><em>Option ${i+1}</em></div>`;
+        output += `<div><em>Option ${i + 1}</em></div>`;
         output += `<div>Départ ligne <em>${transfer.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
         output += displaySegment(transfer.segment1, [from, transfer.transferStation, transfer.transferStation]);
         output += `<div class="transfer">🚉 Changer de train à <strong>${transfer.transferStation}</strong></div>`;
