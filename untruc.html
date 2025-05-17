@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<h2>Planificateur d'itinéraires SCR !</h2>
+<h2>Planificateur d'itinéraires</h2>
 
 <label for="start">Départ :</label>
 <select id="start">
@@ -26,6 +26,7 @@
 <script>
 // Tableau complet corrigé des routes (extrait corrigé, tu peux ajouter le reste)
 const routes = [
+  
   {"routeId":"R001","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
   {"routeId":"R002","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
   {"routeId":"R003","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Angel Pass","Bondin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
@@ -33,7 +34,7 @@ const routes = [
   {"routeId":"R005","type":"Connect","stops":["Stepford Victoria","Financial Quarter","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
   {"routeId":"R006","type":"Metro","stops":["Stepford Victoria","Financial Quartier","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
   {"routeId":"R007","type":"Connect","stops":["Stepford Central","Stepford East","Saint Helen's Bridge","Elsemere Junction","Berrily","Morganstown"]},
-  {"routeId":"R008","type":"Metro","stops":["Stepford Victoria","Financial Quarter","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily"]},
+  {"routeId":"R008","type":"Metro","stops":["Stepford Victoria","Financial Quartier","City Hoqpital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily"]},
   {"routeId":"R009","type":"Connect","stops":["Stepford Victoria","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Eadgemead"]},
   {"routeId":"R010","type":"Waterline","stops":["Greenslade","Whitney Green","Morganstown Docks","Port Benton","Benton","West Benton","Faraday Road","Eden Quay","Newry"]},
   {"routeId":"R011","type":"Waterline","stops":["Connoly","Ashlan Park","Cambridge Street Parkway","Benton","West Benton","Faraday Road","Eden Quay","Newry"]},
@@ -49,19 +50,19 @@ const routes = [
   {"routeId":"R021","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","Whitefield Lido","Stepford United Football Club"]},
   {"routeId":"R022","type":"Connect","stops":["Beechley","Stepford Central","Stepford East","Stepford United Football Club","Woodhead Lane","Houghton Rake","Whitefield"]},
   {"routeId":"R023","type":"Metro","stops":["Stepford Victoria","Financial Quarter","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Whitefield Lido","Stepford United Football Club"]},
-  {"routeId":"R024","type":"Connect","stops":["Stepford Central","Stepford East","Saint helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern","Starrylock","Northshore","Llyn-by-the-Sea"]},
-  {"routeId":"R025","type":"Connect","stops":["St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Eadgmead","Fayemere","Westercoast","Milcastle Racecourse","Milcastle","Westwyvern"]},
-  {"routeId":"R026","type":"Connect","stops":["Stepford Victoria","Stepford Central","Stepford East","Saint helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Milcastle","Westwyvern","Northshore","Llyn-by-the-Sea"]},
+  {"routeId":"R024","type":"Connect","stops":["Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern","Starrylock","Northshore","Llyn-by-the-Sea"]},
+  {"routeId":"R025","type":"Connect","stops":["St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Edgemead","Fayemere","Westercoast","Milcastle Racecourse","Milcastle","Westwyvern"]},
+  {"routeId":"R026","type":"Connect","stops":["Stepford Victoria","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Milcastle","Westwyvern","Northshore","Llyn-by-the-Sea"]},
   {"routeId":"R027","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily"]},
-  {"routeId":"R028","type":"Metro","stops":["Willowfield","Hedmon Park","Beechley","Financial Quartier","Stepford","Stepford Victoria"]},
+  {"routeId":"R028","type":"Metro","stops":["Willowfield","Hedmon Park","Beechley","Financial Quartier","Stepford Victoria"]},
   {"routeId":"R029","type":"Metro","stops":["Stepford Victoria","Financial Quarter","Beechley"]},
   {"routeId":"R030","type":"Metro","stops":["Willowfield","Hedmon Park","Beechley","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily"]},
   {"routeId":"R031","type":"Metro","stops":["Willowfield","Hedmon Park","Beechley","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Whitefield Lido","Stepford United Football Club"]},
   {"routeId":"R032","type":"Connect","stops":["Willowfield","Beechley","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Port Benton"]},
-  {"routeId":"R033","type":"Metro","stops":["Beechley","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Airport Parway","Airport Central"]},
+  {"routeId":"R033","type":"Metro","stops":["Beechley","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Airport Parkway","Airport Central"]},
   {"routeId":"R034","type":"Metro","stops":["Beechley","City Hospital","Stepford Central","Four Ways","Stepford East","Stepford High Street","Saint Helen's Bridge","New Harrow","Elsemere Pound","Elsemere Junction","Berrily","East Berrily","Beaulieu Park","Morganstown"]},
-  {"routeId":"R035","type":"Connect","stops":["Willowfield","Beechley","Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Eadgmead","Fayemere","Westercoast","Milcastle","Westwyvern"]},
-  {"routeId":"R036","type":"Connect","stops":["Willowfield","Beechley","Stepford Central","Stepford East","Saint helen's Bridge","Bodin","Coxly","Benton","Hampton Hargate","Water Newton","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Milcastle","Westwyvern","Northshore","Llyn-by-the-Sea"]},
+  {"routeId":"R035","type":"Connect","stops":["Willowfield","Beechley","Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern"]},
+  {"routeId":"R036","type":"Connect","stops":["Willowfield","Beechley","Stepford Central","Stepford East","Saint Helen's Bridge","Bodin","Coxly","Benton","Hampton Hargate","Water Newton","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Milcastle","Westwyvern","Northshore","Llyn-by-the-Sea"]},
   {"routeId":"R037","type":"Connect","stops":["Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern","Northshore","Llyn-by-the-Sea"]},
   {"routeId":"R038","type":"Connect","stops":["Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern"]},
   {"routeId":"R039","type":"Connect","stops":["Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
@@ -93,12 +94,12 @@ function populateSelectOptions(selectId, stops) {
 populateSelectOptions("start", allStops);
 populateSelectOptions("end", allStops);
 
-// Fonction pour trouver les routes directes
+// Fonction pour trouver les routes directes dans les 2 sens
 function findDirectRoutes(routes, fromStop, toStop) {
   return routes.filter(route => {
     const fromIndex = route.stops.indexOf(fromStop);
     const toIndex = route.stops.indexOf(toStop);
-    return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
+    return fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex;
   });
 }
 
@@ -124,8 +125,34 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     resultsEl.innerHTML = "<li>Aucun itinéraire direct trouvé.</li>";
   } else {
     foundRoutes.forEach(route => {
+      const fromIndex = route.stops.indexOf(fromStop);
+      const toIndex = route.stops.indexOf(toStop);
+
+      // Trier les indices pour extraire le segment correct
+      const start = Math.min(fromIndex, toIndex);
+      const end = Math.max(fromIndex, toIndex);
+
+      const segmentStops = route.stops.slice(start, end + 1);
+
       const li = document.createElement("li");
-      li.textContent = `${route.routeId} (${route.type}) : ${route.stops.join(" → ")}`;
+
+      let content = `${route.routeId} (${route.type}) : `;
+
+      segmentStops.forEach((stop, i) => {
+        if (i === 0 || i === segmentStops.length - 1) {
+          // Départ ou arrivée en normal
+          content += `<span style="font-weight: normal;">${stop}</span>`;
+        } else {
+          // Intermédiaires en italique et plus petits
+          content += `<span style="font-style: italic; font-size: smaller;"> → ${stop}</span>`;
+        }
+        // Ajouter une flèche après départ seulement, pas après les intermédiaires (déjà dans le texte)
+        if (i === 0 && segmentStops.length > 1) {
+          content += " → ";
+        }
+      });
+
+      li.innerHTML = content;
       resultsEl.appendChild(li);
     });
   }
