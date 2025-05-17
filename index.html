@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Itinéraire Stepford Express - Top 3 rapides</title>
+<title>Itinéraire Stepford Express - Top 3 rapides uniques</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -144,6 +144,33 @@
     return html;
   }
 
+  // Fonction pour comparer 2 trajets afin d'éviter doublons (en comparant segments)
+  function isSameRoute(routeA, routeB) {
+    if(routeA.type !== routeB.type) return false;
+    if(routeA.type === "direct") {
+      if(routeA.lineName !== routeB.lineName) return false;
+      if(routeA.segment1.length !== routeB.segment1.length) return false;
+      for(let i=0; i<routeA.segment1.length; i++) {
+        if(routeA.segment1[i] !== routeB.segment1[i]) return false;
+      }
+      return true;
+    } else if(routeA.type === "transfer") {
+      if(routeA.fromLine !== routeB.fromLine) return false;
+      if(routeA.toLine !== routeB.toLine) return false;
+      if(routeA.transferStation !== routeB.transferStation) return false;
+      if(routeA.segment1.length !== routeB.segment1.length) return false;
+      if(routeA.segment2.length !== routeB.segment2.length) return false;
+      for(let i=0; i<routeA.segment1.length; i++) {
+        if(routeA.segment1[i] !== routeB.segment1[i]) return false;
+      }
+      for(let j=0; j<routeA.segment2.length; j++) {
+        if(routeA.segment2[j] !== routeB.segment2[j]) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
   function findRoute() {
     const from = fromSelect.value;
     const to = toSelect.value;
@@ -155,10 +182,9 @@
       return;
     }
 
-    // Tableau d'options de trajets
     let routeOptions = [];
 
-    // Chercher trajet direct
+    // Trajet direct
     for (const [lineName, stops] of Object.entries(lines)) {
       const directPath = getPath(stops, from, to);
       if (directPath) {
@@ -171,7 +197,7 @@
       }
     }
 
-    // Chercher correspondances (1 changement)
+    // Trajet avec 1 correspondance
     const linesWithFrom = [];
     const linesWithTo = [];
 
@@ -209,15 +235,21 @@
       return;
     }
 
-    // Trier par longueur totale (nombre de gares) croissante
+    // Trier par longueur totale
     routeOptions.sort((a, b) => a.totalLength - b.totalLength);
 
-    // Garder seulement les 3 premières options
-    routeOptions = routeOptions.slice(0, 3);
+    // Filtrer doublons
+    let uniqueRoutes = [];
+    for(const route of routeOptions) {
+      if(!uniqueRoutes.some(r => isSameRoute(r, route))) {
+        uniqueRoutes.push(route);
+      }
+      if(uniqueRoutes.length >= 3) break;
+    }
 
     output += `<strong>Les 3 itinéraires les plus rapides :</strong><br><br>`;
 
-    routeOptions.forEach((route, i) => {
+    uniqueRoutes.forEach((route, i) => {
       output += `<div class="option">`;
       output += `<div><em>Option ${i + 1}</em></div>`;
 
@@ -225,5 +257,4 @@
         output += `<div>Itinéraire direct Stepford Express (${route.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}) :</div>`;
         output += displaySegment(route.segment1, [from, to]);
       } else if (route.type === "transfer") {
-        output += `<div>Départ ligne <em>${route.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-        output += displaySegment(route.segment1, [from, route.transferStation, route
+        output += `<div
