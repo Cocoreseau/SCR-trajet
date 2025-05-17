@@ -11,6 +11,10 @@
 <label for="end">Gare d'arrivée :</label>
 <select id="end"></select><br/>
 
+<button id="calculate">Calculer</button>
+
+<div id="result" style="margin-top:20px; font-weight:bold;"></div>
+
 <script>
 const gares = [
   "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
@@ -21,6 +25,7 @@ const gares = [
 
 const startSelect = document.getElementById("start");
 const endSelect = document.getElementById("end");
+const resultDiv = document.getElementById("result");
 
 gares.forEach(gare => {
   const optionStart = document.createElement("option");
@@ -33,6 +38,16 @@ gares.forEach(gare => {
   optionEnd.textContent = gare;
   endSelect.appendChild(optionEnd);
 });
+
+document.getElementById("calculate").onclick = () => {
+  const start = startSelect.value;
+  const end = endSelect.value;
+  if (start === end) {
+    resultDiv.textContent = "La gare de départ et d'arrivée doivent être différentes.";
+  } else {
+    resultDiv.textContent = `Tu as choisi : départ = ${start}, arrivée = ${end}`;
+  }
+};
 </script>
 </body>
 </html>
