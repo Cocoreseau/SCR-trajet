@@ -1,169 +1,253 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calculateur d'itinéraire – Stepford Express & Airlink</title>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f8f8f8; color: #333; padding: 20px; }
-    h1 { color: #444; text-align: center; }
-    .controls { max-width: 400px; margin: auto; }
-    label { display: block; margin-top: 1rem; font-weight: bold; }
-    select, button { padding: 10px; margin: 10px 0; width: 100%; font-size: 1rem; }
-    button { background: #333; color: #fff; border: none; cursor: pointer; }
-    button:hover { background: #555; }
-
-    .result { margin-top: 30px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .route { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
-    .route:last-child { border-bottom: none; }
-
-    .step { margin: 8px 0; }
-    .step .station { display: inline-block; padding: 4px 8px; border-radius: 4px; color: #fff; }
-    .express { background-color: #cc33cc; }
-    .airlink { background-color: #ff9900; }
-    .mixed { background: linear-gradient(90deg, #cc33cc 50%, #ff9900 50%); }
-
-    .text-depart, .text-arrivee, .text-change { font-weight: bold; }
-    .text-inter { font-style: italic; color: #555; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculateur itinéraire - Stepford</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 2em; }
+  label, select, button { font-size: 1rem; margin: 0.5em 0; }
+  select, button { padding: 0.3em; }
+  #result { margin-top: 1.5em; background: #fff; padding: 1em; border-radius: 6px; }
+  .segment {
+    border-left: 6px solid;
+    margin-bottom: 1em;
+    padding-left: 10px;
+  }
+  .step {
+    margin-left: 1.5em;
+    font-size: 0.9rem;
+  }
+  .step.intermediate {
+    font-style: italic;
+    font-size: 0.8rem;
+    color: #555;
+  }
+  .step.operator {
+    font-weight: bold;
+  }
+  .op-stepford-express { border-color: #c080d9; color: #703a9c; }
+  .op-airlink { border-color: #f28c1e; color: #ad5700; }
+</style>
 </head>
 <body>
-  <h1>Calculateur d'itinéraire</h1>
-  <div class="controls">
-    <label for="depart">Gare de départ :</label>
-    <select id="depart"></select>
+<h1>Calculateur d'itinéraire - Stepford</h1>
 
-    <label for="arrivee">Gare d’arrivée :</label>
-    <select id="arrivee"></select>
+<label for="start">Gare de départ :</label>
+<select id="start"></select><br/>
 
-    <button onclick="calculerItineraire()">Calculer l’itinéraire</button>
-  </div>
+<label for="end">Gare d'arrivée :</label>
+<select id="end"></select><br/>
 
-  <div id="resultats" class="result"></div>
+<button id="calculate">Calculer l'itinéraire</button>
 
-  <script>
-    const lignes = [
-      { nom: "Express – Lyn via Morganstown", id: "express", gares: ["Stepford Central","St Helens Bridge","Elsemere Junction","Morganstown","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Westwyvern","Northshore","Llyn-by-the-Sea"] },
-      { nom: "Express – Lyn via Benton", id: "express", gares: ["Stepford Central","St Helens Bridge","Benton","Leighton Stepford Road","Leighton City","Edgemead","Westercoast","Westwyvern","Northshore","Llyn-by-the-Sea"] },
-      { nom: "Express – Rayleigh Bay", id: "express", gares: ["Llyn-by-the-Sea","Northshore","Westwyvern","Edgemead","Rayleigh Bay"] },
-      { nom: "Express – Newry 1", id: "express", gares: ["Leighton City","Leighton Stepford Road","Benton","Eden Quay","Newry"] },
-      { nom: "Express – Newry 2", id: "express", gares: ["Llyn-by-the-Sea","Westwyvern","Leighton City","Leighton Stepford Road","Benton","Newry","Newry Harbour"] },
-      { nom: "Express – Newry 3", id: "express", gares: ["Llyn-by-the-Sea","Northshore","Westercoast","Leighton City","Leighton Stepford Road","Morganstown","Benton","Newry"] },
-      { nom: "Airlink 1", id: "airlink", gares: ["Stepford Central","Stepford Airport Central"] },
-      { nom: "Airlink 2", id: "airlink", gares: ["Stepford Central","Stepford Airport Central","Airport Terminal 1","Airport Terminal 2"] },
-      { nom: "Airlink 3", id: "airlink", gares: ["Stepford Central","Stepford East","Elsemere Junction","Morganstown","Stepford Airport Central","Airport Terminal 1","Airport Terminal 2"] },
-      { nom: "Airlink 4", id: "airlink", gares: ["Stepford Central","St Helens Bridge","Berrily","Stepford Airport Parkway","Stepford Airport Central"] },
-      { nom: "Airlink 5", id: "airlink", gares: ["Stepford Central","Stepford East","Stepford Airport Parkway","Stepford Airport Central"] },
-      { nom: "Airlink 6", id: "airlink", gares: ["Stepford Airport Central","Stepford Airport Parkway","Leighton Stepford Road"] },
-      { nom: "Airlink 7", id: "airlink", gares: ["Terminal 3","Terminal 2","Stepford Airport Central","Water Newton","Leighton Stepford Road"] },
-      { nom: "Airlink 8", id: "airlink", gares: ["Stepford Central","St Helens Bridge","Morganstown","Stepford Airport Central","Airport Terminal 1","Terminal 3"] },
-      { nom: "Airlink 9", id: "airlink", gares: ["Stepford Central","St Helens Bridge","Elsemere Junction","Stepford Airport Parkway","Stepford Airport Central","Airport Terminal 2"] }
-    ];
+<div id="result"></div>
 
-    const toutesGares = Array.from(new Set(lignes.flatMap(l => l.gares))).sort();
-    const departSelect = document.getElementById('depart');
-    const arriveeSelect = document.getElementById('arrivee');
-    
-    toutesGares.forEach(gare => {
-      departSelect.add(new Option(gare, gare));
-      arriveeSelect.add(new Option(gare, gare));
-    });
+<script>
+// Données gares simplifiées (pour exemple)
+const gares = [
+  "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road", "Leighton City",
+  "Edgemead", "Westercoast", "Westwyvern", "Northshore", "Llyn-by-the-Sea",
+  "Elsemere Junction", "Morganstown", "Rayleigh Bay", "Eden Quay", "Newry", "Newry Harbour",
+  "Airport Central", "Stepford East", "Berrily", "Airport Parkway", "Terminal 1", "Terminal 2", "Terminal 3", "Water Newton", "LSR"
+];
 
-    function calculerItineraire() {
-      const depart = departSelect.value;
-      const arrivee = arriveeSelect.value;
-      const resultDiv = document.getElementById('resultats');
-      resultDiv.innerHTML = '';
-      if (!depart || !arrivee) return;
-      if (depart === arrivee) {
-        resultDiv.innerHTML = '<p>Départ et arrivée identiques.</p>';
-        return;
-      }
+// Opérateurs avec couleur et id (pour classes CSS)
+const operators = {
+  "Stepford Express": { id: "stepford-express", color: "#c080d9" },
+  "Airlink": { id: "airlink", color: "#f28c1e" }
+};
 
-      let options = [];
+// Lignes = tableau d'objets : id opérateur, nom, gares ordonnées (sens aller)
+const lignes = [
+  {
+    id: "Stepford Express",
+    gares: [
+      "Stepford Central", "St Helens Bridge", "Benton", "Leighton Stepford Road",
+      "Leighton City", "Edgemead", "Westercoast", "Westwyvern",
+      "Northshore", "Llyn-by-the-Sea"
+    ],
+  },
+  {
+    id: "Stepford Express",
+    gares: [
+      "Stepford Central", "St Helens Bridge", "Elsemere Junction", "Morganstown",
+      "Leighton Stepford Road", "Leighton City", "Edgemead", "Westercoast",
+      "Westwyvern", "Northshore", "Llyn-by-the-Sea"
+    ],
+  },
+  {
+    id: "Airlink",
+    gares: [
+      "Stepford Central", "Airport Central"
+    ]
+  },
+  {
+    id: "Airlink",
+    gares: [
+      "Stepford Central", "Stepford East", "Elsemere Junction", "Morganstown",
+      "Airport Central", "Terminal 1", "Terminal 2"
+    ]
+  },
+  {
+    id: "Airlink",
+    gares: [
+      "Airport Central", "Airport Parkway", "Water Newton", "LSR"
+    ]
+  },
+];
 
-      // Direct
-      lignes.forEach(ligne => {
-        const i0 = ligne.gares.indexOf(depart);
-        const i1 = ligne.gares.indexOf(arrivee);
-        if (i0 !== -1 && i1 !== -1 && i0 < i1) {
-          options.push({
-            lignes: [ligne],
-            chemin: ligne.gares.slice(i0, i1 + 1)
-          });
-        }
-      });
+// Construire le graphe global
+// Format: { gare: [ { to, operator } ] }
+const graph = {};
+function addEdge(u, v, operator) {
+  if (!graph[u]) graph[u] = [];
+  if (!graph[v]) graph[v] = [];
+  graph[u].push({ to: v, operator });
+  graph[v].push({ to: u, operator });
+}
+lignes.forEach(line => {
+  for (let i = 0; i < line.gares.length - 1; i++) {
+    addEdge(line.gares[i], line.gares[i + 1], line.id);
+  }
+});
 
-      // Correspondance
-      if (options.length === 0) {
-        lignes.forEach(l1 => {
-          const i0 = l1.gares.indexOf(depart);
-          if (i0 === -1) return;
-          lignes.forEach(l2 => {
-            if (l1 === l2) return;
-            const i1 = l2.gares.indexOf(arrivee);
-            if (i1 === -1) return;
-            l1.gares.slice(i0 + 1).forEach(c => {
-              const iC = l2.gares.indexOf(c);
-              if (iC !== -1 && iC < i1) {
-                const chemin = l1.gares.slice(i0, l1.gares.indexOf(c) + 1)
-                  .concat(l2.gares.slice(iC + 1, i1 + 1));
-                options.push({ lignes: [l1, l2], chemin, correspondance: c });
-              }
-            });
-          });
-        });
-      }
+// Remplir les selects
+const startSelect = document.getElementById("start");
+const endSelect = document.getElementById("end");
+gares.forEach(g => {
+  const o1 = document.createElement("option");
+  o1.value = g; o1.textContent = g;
+  const o2 = document.createElement("option");
+  o2.value = g; o2.textContent = g;
+  startSelect.appendChild(o1);
+  endSelect.appendChild(o2);
+});
 
-      if (options.length === 0) {
-        resultDiv.innerHTML = '<p>Aucun itinéraire trouvé.</p>';
-        return;
-      }
+// Algorithme de recherche (BFS) avec limitation max 3 changements opérateurs différents
+function findPaths(start, end) {
+  const queue = [];
+  // Chaque état: gare, chemin, opérateurs rencontrés (en Set), opérateur courant, nombre changements
+  queue.push({ 
+    gare: start,
+    path: [start],
+    operatorsUsed: new Set(),
+    currentOperator: null,
+    changes: 0
+  });
+  const results = [];
+  const visited = new Set();
 
-      // Tri et uniques
-      options.sort((a, b) => a.chemin.length - b.chemin.length);
-      const uniques = [];
-      for (let o of options) {
-        if (!uniques.some(u => JSON.stringify(u.chemin) === JSON.stringify(o.chemin))) {
-          uniques.push(o);
-        }
-        if (uniques.length >= 3) break;
-      }
-
-      // Affichage
-      uniques.forEach(opt => {
-        const routeDiv = document.createElement('div');
-        routeDiv.className = 'result route ' +
-          (opt.lignes.length > 1 ? 'mixed' : opt.lignes[0].id);
-        // Monter
-        const step0 = document.createElement('div');
-        step0.className = 'step text-depart';
-        step0.textContent = 'Monter à ' + depart;
-        routeDiv.appendChild(step0);
-
-        // Chemin
-        opt.chemin.forEach((g, idx) => {
-          if (idx === 0 || idx === opt.chemin.length - 1) return;
-          const step = document.createElement('div');
-          if (opt.correspondance && g === opt.correspondance) {
-            step.className = 'step text-change';
-            step.textContent = 'Changer de train à ' + g;
-          } else {
-            step.className = 'step text-inter';
-            step.textContent = g;
-          }
-          routeDiv.appendChild(step);
-        });
-
-        // Descendre
-        const stepN = document.createElement('div');
-        stepN.className = 'step text-arrivee';
-        stepN.textContent = 'Descendre à ' + arrivee;
-        routeDiv.appendChild(stepN);
-
-        resultDiv.appendChild(routeDiv);
-      });
+  while(queue.length) {
+    const state = queue.shift();
+    if (state.gare === end) {
+      results.push(state);
+      if (results.length >= 3) break; // Limite à 3 solutions
+      continue;
     }
-  </script>
-</body>
-</html>
+    // Eviter les cycles sur même état
+    const visitKey = state.gare + "|" + [...state.operatorsUsed].sort().join(",") + "|" + state.currentOperator + "|" + state.changes;
+    if (visited.has(visitKey)) continue;
+    visited.add(visitKey);
+
+    const neighbors = graph[state.gare] || [];
+    neighbors.forEach(n => {
+      let nextChanges = state.changes;
+      let opsUsed = new Set(state.operatorsUsed);
+      let nextOperator = state.currentOperator;
+
+      if (n.operator !== state.currentOperator) {
+        if (!opsUsed.has(n.operator)) {
+          nextChanges++;
+          opsUsed.add(n.operator);
+        }
+        nextOperator = n.operator;
+      }
+      if (nextChanges > 3) return; // Trop de changements opérateurs
+      if (state.path.includes(n.to)) return; // Evite boucle
+
+      queue.push({
+        gare: n.to,
+        path: [...state.path, n.to],
+        operatorsUsed: opsUsed,
+        currentOperator: nextOperator,
+        changes: nextChanges
+      });
+    });
+  }
+  return results;
+}
+
+// Trouver opérateur pour segment entre deux gares consécutives dans un chemin
+function operatorBetween(a, b) {
+  const edges = graph[a] || [];
+  for (const e of edges) {
+    if (e.to === b) return e.operator;
+  }
+  return null;
+}
+
+// Afficher résultat
+function displayResults(results, start, end) {
+  const container = document.getElementById("result");
+  container.innerHTML = "";
+  if (results.length === 0) {
+    container.textContent = `Aucun itinéraire trouvé entre "${start}" et "${end}".`;
+    return;
+  }
+  results.forEach((res, idx) => {
+    const divSeg = document.createElement("div");
+    divSeg.className = "segment";
+
+    // Parcourir le chemin et grouper par opérateur
+    let lastOp = null;
+    let segmentStations = [];
+    function flushSegment() {
+      if (segmentStations.length === 0) return;
+      // Le segment est du même opérateur
+      const opId = operators[lastOp].id;
+      const segDiv = document.createElement("div");
+      segDiv.className = "segment op-" + opId;
+      // Monter à
+      const firstStation = segmentStations[0];
+      const firstStep = document.createElement("div");
+      firstStep.className = "step operator";
+      firstStep.innerHTML = `<strong>Monter à</strong> <span>${firstStation}</span> <small>(${lastOp})</small>`;
+      segDiv.appendChild(firstStep);
+      // Intermédiaires en italique sauf 1er et dernier
+      for (let i = 1; i < segmentStations.length - 1; i++) {
+        const step = document.createElement("div");
+        step.className = "step intermediate";
+        const opColor = operators[lastOp].color;
+        step.style.color = opColor;
+        step.textContent = segmentStations[i] + ` (${lastOp})`;
+        segDiv.appendChild(step);
+      }
+      // Descendre à
+      if (segmentStations.length > 1) {
+        const lastStation = segmentStations[segmentStations.length - 1];
+        const lastStep = document.createElement("div");
+        lastStep.className = "step operator";
+        lastStep.innerHTML = `<strong>Descendre à</strong> <span>${lastStation}</span> <small>(${lastOp})</small>`;
+        segDiv.appendChild(lastStep);
+      }
+      container.appendChild(segDiv);
+      segmentStations = [];
+    }
+
+    for (let i = 0; i < res.path.length - 1; i++) {
+      const a = res.path[i], b = res.path[i + 1];
+      const op = operatorBetween(a,b);
+      if (op !== lastOp) {
+        flushSegment();
+        lastOp = op;
+      }
+      segmentStations.push(a);
+      if (i === res.path.length - 2) {
+        // Dernière gare
+        segmentStations.push(b);
+      }
+    }
+    flushSegment();
+
+    // Afficher
