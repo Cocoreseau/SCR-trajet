@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test gares</title>
+</head>
+<body>
+  <h2>Choisir la gare de départ</h2>
+  <select id="depart"></select>
+
+  <h2>Choisir la gare d'arrivée</h2>
+  <select id="arrivee"></select>
+
+  <script>
+    // Liste simple des gares (juste pour tester)
+    const gares = [
+      "Stepford Central",
+      "Benton",
+      "St Helens Bridge",
+      "Leighton City",
+      "Morganstown",
+      "Newry"
+    ];
+
+    function remplirSelect(id) {
+      const select = document.getElementById(id);
+      gares.forEach(gare => {
+        const option = document.createElement("option");
+        option.value = gare;
+        option.textContent = gare;
+        select.appendChild(option);
+      });
+    }
+
+    // Remplissage des selects
+    remplirSelect("depart");
+    remplirSelect("arrivee");
+  </script>
+</body>
+</html>
