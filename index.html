@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Itinéraire Stepford Express - Top 3 rapides uniques</title>
 <style>
-  /* Ton style ici (le même que précédemment) */
   body {
     font-family: Arial, sans-serif;
     background: #f9f9f9;
@@ -132,13 +131,16 @@
       lineStops.slice(endIndex, startIndex + 1).reverse();
   }
 
-  function displaySegment(segment, keyStations) {
+  function displaySegment(segment, keyStations, transferStation=null) {
     let html = "";
     segment.forEach(station => {
       if (keyStations.includes(station)) {
-        const cls = (keyStations.length > 2 && station === keyStations[1]) ? "stop-transfer" : "stop-key";
+        // Gare clé (départ, arrivée, ou correspondance)
+        let cls = "stop-key";
+        if (transferStation && station === transferStation) cls = "stop-transfer";
         html += `<div class="${cls}">→ ${station}</div>`;
       } else {
+        // Gare intermédiaire italique sans mention
         html += `<div class="stop-intermediate">→ ${station}</div>`;
       }
     });
@@ -254,8 +256,23 @@
       output += `<div><em>Option ${i + 1}</em></div>`;
 
       if (route.type === "direct") {
-        output += `<div>Itinéraire direct Stepford Express (${route.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}) :</div>`;
-        output += displaySegment(route.segment1, [from, to]);
+        output += `<div>Itinéraire direct Stepford Express (<strong>${route.lineName.replace('stepford_express_', '').replaceAll('_', ' ')}</strong>) :</div>`;
+        output += displaySegment(route.segment1, [route.segment1[0], route.segment1[route.segment1.length -1]]);
       } else if (route.type === "transfer") {
         output += `<div>Départ ligne <em>${route.fromLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
-        output += displaySegment(route.segment1
+        output += displaySegment(route.segment1, [route.segment1[0], route.transferStation], route.transferStation);
+
+        output += `<div class="transfer">Correspondance à <strong>${route.transferStation}</strong></div>`;
+
+        output += `<div>Puis ligne <em>${route.toLine.replace('stepford_express_', '').replaceAll('_', ' ')}</em> :</div>`;
+        output += displaySegment(route.segment2, [route.transferStation, route.segment2[route.segment2.length - 1]], route.transferStation);
+      }
+
+      output += `</div><br>`;
+    });
+
+    document.getElementById("result").innerHTML = output;
+  }
+</script>
+</body>
+</html>
