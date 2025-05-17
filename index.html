@@ -1,148 +1,125 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculateur d'itinéraire Stepford</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 20px; }
-  h1 { color: #333; }
-  label { font-weight: bold; }
-  select { padding: 5px; margin: 5px 10px 20px 0; }
-  button { padding: 6px 12px; cursor: pointer; }
-  .result { margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1);}
-  .itineraire { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
-  .gare { font-weight: bold; font-size: 1.1em; }
-  .gare.intermediaire { font-weight: normal; font-style: italic; font-size: 0.9em; color: #555; }
-  .correspondance { color: #c44; font-weight: bold; margin: 5px 0; }
-  .express { color: #9b59b6; } /* violet/rose */
-  .airlink { color: #d35400; } /* orange */
-  .ligne-name { font-weight: bold; margin-bottom: 6px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculateur d'itinéraire - Stepford</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    select, button {
+      font-size: 16px;
+      padding: 8px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 400px;
+      display: block;
+    }
+    .results {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .operator-stepford-express {
+      color: #c600a1;
+      font-weight: bold;
+    }
+    .operator-airlink {
+      color: #ff7700;
+      font-weight: bold;
+    }
+    .connection {
+      font-weight: bold;
+      color: #000;
+    }
+    .intermediate {
+      font-style: italic;
+      font-size: 0.9em;
+    }
+    .route-option {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+  </style>
 </head>
 <body>
-<h1>Calculateur d'itinéraire Stepford</h1>
-<label for="depart">Gare de départ :</label>
-<select id="depart"></select>
+  <h1>Calculateur d'itinéraire - Stepford</h1>
 
-<label for="arrivee">Gare d'arrivée :</label>
-<select id="arrivee"></select>
+  <label for="start">Gare de départ :</label>
+  <select id="start">
+    <option value="">-- Sélectionner --</option>
+    <option value="Stepford Central">Stepford Central</option>
+    <option value="St Helens Bridge">St Helens Bridge</option>
+    <option value="Benton">Benton</option>
+    <option value="Elsemere Junction">Elsemere Junction</option>
+    <option value="Morganstown">Morganstown</option>
+    <option value="Leighton Stepford Road">Leighton Stepford Road</option>
+    <option value="Leighton City">Leighton City</option>
+    <option value="Edgemead">Edgemead</option>
+    <option value="Westercoast">Westercoast</option>
+    <option value="Westwyvern">Westwyvern</option>
+    <option value="Northshore">Northshore</option>
+    <option value="Llyn-by-the-Sea">Llyn-by-the-Sea</option>
+    <option value="Rayleigh Bay">Rayleigh Bay</option>
+    <option value="Eden Quay">Eden Quay</option>
+    <option value="Newry">Newry</option>
+    <option value="Newry Harbour">Newry Harbour</option>
+    <option value="Stepford East">Stepford East</option>
+    <option value="Berrily">Berrily</option>
+    <option value="Stepford Airport Parkway">Stepford Airport Parkway</option>
+    <option value="Stepford Airport Central">Stepford Airport Central</option>
+    <option value="Airport Terminal 1">Airport Terminal 1</option>
+    <option value="Airport Terminal 2">Airport Terminal 2</option>
+    <option value="Airport Terminal 3">Airport Terminal 3</option>
+    <option value="Water Newton">Water Newton</option>
+  </select>
 
-<button id="calculer">Calculer l'itinéraire</button>
+  <label for="end">Gare d'arrivée :</label>
+  <select id="end">
+    <option value="">-- Sélectionner --</option>
+    <option value="Stepford Central">Stepford Central</option>
+    <option value="St Helens Bridge">St Helens Bridge</option>
+    <option value="Benton">Benton</option>
+    <option value="Elsemere Junction">Elsemere Junction</option>
+    <option value="Morganstown">Morganstown</option>
+    <option value="Leighton Stepford Road">Leighton Stepford Road</option>
+    <option value="Leighton City">Leighton City</option>
+    <option value="Edgemead">Edgemead</option>
+    <option value="Westercoast">Westercoast</option>
+    <option value="Westwyvern">Westwyvern</option>
+    <option value="Northshore">Northshore</option>
+    <option value="Llyn-by-the-Sea">Llyn-by-the-Sea</option>
+    <option value="Rayleigh Bay">Rayleigh Bay</option>
+    <option value="Eden Quay">Eden Quay</option>
+    <option value="Newry">Newry</option>
+    <option value="Newry Harbour">Newry Harbour</option>
+    <option value="Stepford East">Stepford East</option>
+    <option value="Berrily">Berrily</option>
+    <option value="Stepford Airport Parkway">Stepford Airport Parkway</option>
+    <option value="Stepford Airport Central">Stepford Airport Central</option>
+    <option value="Airport Terminal 1">Airport Terminal 1</option>
+    <option value="Airport Terminal 2">Airport Terminal 2</option>
+    <option value="Airport Terminal 3">Airport Terminal 3</option>
+    <option value="Water Newton">Water Newton</option>
+  </select>
 
-<div id="resultats" class="result"></div>
+  <button onclick="calculateRoute()">Calculer l'itinéraire</button>
 
-<script>
-// Liste complète des gares (sans doublons)
-const gares = [
-  "Stepford Central", "Benton", "St Helens Bridge", "Stepford East", "Leighton City",
-  "Bodin", "Leighton Stepford Road", "Edgemead", "Coxly", "Westwyvern", "Llyn-by-the-Sea",
-  "Elsemere Junction", "Four Ways", "Stepford Airport Central", "Stepford High Street",
-  "Benton Bridge", "Beechley", "Morganstown", "Westercoast", "Northshore", "Stepford Victoria",
-  "Water Newton", "Angel Pass", "City Hospital", "Elsemere Pond", "Hampton Hargate",
-  "Millcastle", "New Harrow", "Airport Terminal 2", "Newry", "Stepford Airport Parkway",
-  "Faymere", "Port Benton", "Berrily", "Eden Quay", "Financial Quarter", "Willowfield",
-  "Cambridge Street Parkway", "Rocket Parade", "Faraday Road", "West Benton", "Rayleigh Bay",
-  "Stepford United Football Club", "Aslockby", "Barton", "Carnalea Bridge", "Coxly Newtown",
-  "Leighton West", "Millcastle Racecourse", "Morganstown Docks", "Upper Staploe",
-  "Airport Terminal 1", "Airport Terminal 3", "Airport West", "Hemdon Park", "Newry Harbour",
-  "Starryloch", "Ashlan Park", "Beaulieu Park", "Connolly", "East Berrily", "Farleigh",
-  "Whitefield", "Whitefield Lido", "Woodhead Lane", "Esterfield", "Greenslade", "Houghton Rake",
-  "James Street", "Whitney Green", "Rosedale Village", "Airport Central", "Terminal 1",
-  "Terminal 2", "Terminal 3", "Airport Parkway", "Leighton Stepford Road", "Stepford East"
-];
+  <div class="results" id="results">
+    Sélectionnez un point de départ et une destination pour voir l'itinéraire.
+  </div>
 
-// Lignes Stepford Express (simplifié avec temps en minutes)
-const expressLines = [
-  {
-    name: "Stepford Express Lyn via Benton",
-    colorClass: "express",
-    stops: [
-      { station: "Stepford Central", timeToNext: 3 },
-      { station: "St Helens Bridge", timeToNext: 3 },
-      { station: "Benton", timeToNext: 4 },
-      { station: "Leighton Stepford Road", timeToNext: 4 },
-      { station: "Leighton City", timeToNext: 2 },
-      { station: "Edgemead", timeToNext: 2 },
-      { station: "Westercoast", timeToNext: 3 },
-      { station: "Westwyvern", timeToNext: 4 },
-      { station: "Northshore", timeToNext: 4 },
-      { station: "Llyn-by-the-Sea", timeToNext: 0 }
-    ]
-  },
-  {
-    name: "Stepford Express Lyn via Morganstown",
-    colorClass: "express",
-    stops: [
-      { station: "Stepford Central", timeToNext: 3 },
-      { station: "St Helens Bridge", timeToNext: 3 },
-      { station: "Elsemere Junction", timeToNext: 3 },
-      { station: "Morganstown", timeToNext: 4 },
-      { station: "Leighton Stepford Road", timeToNext: 4 },
-      { station: "Leighton City", timeToNext: 2 },
-      { station: "Edgemead", timeToNext: 3 },
-      { station: "Westercoast", timeToNext: 4 },
-      { station: "Westwyvern", timeToNext: 4 },
-      { station: "Northshore", timeToNext: 4 },
-      { station: "Llyn-by-the-Sea", timeToNext: 0 }
-    ]
-  },
-  {
-    name: "Stepford Express Rayleigh Bay",
-    colorClass: "express",
-    stops: [
-      { station: "Llyn-by-the-Sea", timeToNext: 4 },
-      { station: "Northshore", timeToNext: 4 },
-      { station: "Westwyvern", timeToNext: 3 },
-      { station: "Edgemead", timeToNext: 4 },
-      { station: "Rayleigh Bay", timeToNext: 0 }
-    ]
-  },
-  {
-    name: "Stepford Express Newry 1",
-    colorClass: "express",
-    stops: [
-      { station: "Leighton City", timeToNext: 4 },
-      { station: "Leighton Stepford Road", timeToNext: 4 },
-      { station: "Benton", timeToNext: 3 },
-      { station: "Eden Quay", timeToNext: 3 },
-      { station: "Newry", timeToNext: 0 }
-    ]
-  },
-  {
-    name: "Stepford Express Newry 2",
-    colorClass: "express",
-    stops: [
-      { station: "Llyn-by-the-Sea", timeToNext: 4 },
-      { station: "Northshore", timeToNext: 4 },
-      { station: "Westwyvern", timeToNext: 6 },
-      { station: "Leighton City", timeToNext: 4 },
-      { station: "Leighton Stepford Road", timeToNext: 4 },
-      { station: "Benton", timeToNext: 4 },
-      { station: "Newry", timeToNext: 0 },
-      { station: "Newry Harbour", timeToNext: 0 }
-    ]
-  },
-  {
-    name: "Stepford Express Newry 3",
-    colorClass: "express",
-    stops: [
-      { station: "Llyn-by-the-Sea", timeToNext: 4 },
-      { station: "Northshore", timeToNext: 4 },
-      { station: "Westercoast", timeToNext: 6 },
-      { station: "Leighton City", timeToNext: 3 },
-      { station: "Leighton Stepford Road", timeToNext: 4 },
-      { station: "Morganstown", timeToNext: 3 },
-      { station: "Benton", timeToNext: 3 },
-      { station: "Newry", timeToNext: 0 }
-    ]
-  }
-];
-
-// Lignes Airlink (avec temps estimé 3 min si non précisé)
-const airlinkLines = [
-  {
-    name: "Airlink 1",
-    colorClass: "airlink",
-    stops: [
-      { station
+  <script src="script.js"></script>
+</body>
+</html>
