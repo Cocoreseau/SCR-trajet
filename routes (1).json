@@ -1,0 +1,53 @@
+[
+  {
+    "id": "R001",
+    "type": "Connect",
+    "stations": [
+      "Stepford Central",
+      "Stepford East",
+      "St Helens Bridge",
+      "Bodin",
+      "Coxly",
+      "Benton",
+      "Benton Bridge",
+      "Stepford Airport Parkway",
+      "Stepford Airport Central"
+    ]
+  },
+  {
+    "id": "R002",
+    "type": "Metro",
+    "stations": [
+      "Stepford Central",
+      "Four Ways",
+      "Stepford East",
+      "Stepford High Street",
+      "St Helens Bridge",
+      "Angel Pass",
+      "Bodin",
+      "Coxly",
+      "Benton",
+      "Port Benton"
+    ]
+  },
+  {
+    "id": "R003",
+    "type": "Connect",
+    "stations": [
+      "Stepford Central",
+      "Stepford East",
+      "St Helens Bridge",
+      "Angel Pass",
+      "Bondin",
+      "coxly",
+      "Benton",
+      "Benton Bridge",
+      "Hampton Hargate",
+      "Upper Staploe",
+      "Water Newton",
+      "Rocket Parade",
+      "Leighton Stepford Road",
+      "Leighton City"
+    ]
+  }
+]
