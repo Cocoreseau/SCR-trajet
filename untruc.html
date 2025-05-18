@@ -1,99 +1,70 @@
-<<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Planificateur SCR</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    select, button { margin: 10px 0; padding: 5px; }
-    li { margin-bottom: 10px; }
-    .intermediate { font-style: italic; font-size: 0.9em; }
-  </style>
-</head>
-<body>
-
-<h2>Planificateur d'itinéraires (max 4 correspondances)</h2>
-
-<label for="start">Départ :</label>
-<select id="start"><option value="">-- Choisir --</option></select>
-
-<label for="end">Arrivée :</label>
-<select id="end"><option value="">-- Choisir --</option></select>
-
-<button id="search">Chercher itinéraires</button>
-
-<h3>Résultats :</h3>
-<ul id="results"></ul>
-
 <script>
+fetch('routes.json')
+  .then(response => response.json())
+  .then(routes => {
+    const allStops = [...new Set(routes.flatMap(route => route.stops))].sort();
 
-  
-const routes = routes (1).json
-const allStops = [...new Set(routes.flatMap(route => route.stops))].sort();
+    const startSelect = document.getElementById("start");
+    const endSelect = document.getElementById("end");
 
-const startSelect = document.getElementById("start");
-const endSelect = document.getElementById("end");
-
-allStops.forEach(stop => {
-  const option1 = new Option(stop, stop);
-  const option2 = new Option(stop, stop);
-  startSelect.add(option1);
-  endSelect.add(option2);
-});
-
-// --- 3. Recherche d’itinéraire avec correspondances ---
-function findPaths(currentStop, endStop, visitedRoutes, path, depth = 0) {
-  if (depth > 4) return []; // max 4 correspondances
-  let results = [];
-
-  for (let route of routes) {
-    if (visitedRoutes.includes(route)) continue;
-    if (!route.stops.includes(currentStop)) continue;
-
-    const currentIndex = route.stops.indexOf(currentStop);
-    const remainingStops = route.stops.slice(currentIndex + 1);
-
-    if (remainingStops.includes(endStop)) {
-      results.push([...path, { route, from: currentStop, to: endStop }]);
-    } else {
-      for (let nextStop of remainingStops) {
-        const newVisitedRoutes = [...visitedRoutes, route];
-        const newPath = [...path, { route, from: currentStop, to: nextStop }];
-        const subPaths = findPaths(nextStop, endStop, newVisitedRoutes, newPath, depth + 1);
-        results = results.concat(subPaths);
-      }
-    }
-  }
-
-  return results;
-}
-
-document.getElementById("search").addEventListener("click", () => {
-  const start = startSelect.value;
-  const end = endSelect.value;
-  const resultList = document.getElementById("results");
-  resultList.innerHTML = "";
-
-  if (!start || !end || start === end) {
-    resultList.innerHTML = "<li>Veuillez sélectionner deux arrêts différents.</li>";
-    return;
-  }
-
-  const results = findPaths(start, end, [], []);
-
-  if (results.length === 0) {
-    resultList.innerHTML = "<li>Aucun itinéraire trouvé</li>";
-  } else {
-    results.slice(0, 5).forEach(path => { // limite à 5 résultats pour lisibilité
-      const li = document.createElement("li");
-      li.innerHTML = path.map(step => 
-        `Ligne ${step.route.name} : ${step.from} → ${step.to}`
-      ).join("<br>");
-      resultList.appendChild(li);
+    allStops.forEach(stop => {
+      const option1 = new Option(stop, stop);
+      const option2 = new Option(stop, stop);
+      startSelect.add(option1);
+      endSelect.add(option2);
     });
-  }
-});
-</script>
 
-</body>
-</html>
+    function findPaths(currentStop, endStop, visitedRoutes, path, depth = 0) {
+      if (depth > 4) return [];
+      let results = [];
+      for (let route of routes) {
+        if (visitedRoutes.includes(route)) continue;
+        if (!route.stops.includes(currentStop)) continue;
+
+        const currentIndex = route.stops.indexOf(currentStop);
+        const remainingStops = route.stops.slice(currentIndex + 1);
+
+        if (remainingStops.includes(endStop)) {
+          results.push([...path, { route, from: currentStop, to: endStop }]);
+        } else {
+          for (let nextStop of remainingStops) {
+            const newVisitedRoutes = [...visitedRoutes, route];
+            const newPath = [...path, { route, from: currentStop, to: nextStop }];
+            const subPaths = findPaths(nextStop, endStop, newVisitedRoutes, newPath, depth + 1);
+            results = results.concat(subPaths);
+          }
+        }
+      }
+      return results;
+    }
+
+    document.getElementById("search").addEventListener("click", () => {
+      const start = startSelect.value;
+      const end = endSelect.value;
+      const resultList = document.getElementById("results");
+      resultList.innerHTML = "";
+
+      if (!start || !end || start === end) {
+        resultList.innerHTML = "<li>Veuillez sélectionner deux arrêts différents.</li>";
+        return;
+      }
+
+      const results = findPaths(start, end, [], []);
+
+      if (results.length === 0) {
+        resultList.innerHTML = "<li>Aucun itinéraire trouvé</li>";
+      } else {
+        results.slice(0, 5).forEach(path => {
+          const li = document.createElement("li");
+          li.innerHTML = path.map(step => 
+            `Ligne ${step.route.routeId} (${step.route.type}) : ${step.from} → ${step.to}`
+          ).join("<br>");
+          resultList.appendChild(li);
+        });
+      }
+    });
+  })
+  .catch(error => {
+    console.error('Erreur lors du chargement des routes:', error);
+  });
+</script>
