@@ -119,7 +119,7 @@ const routes =
                 
 ];
 const stopGraph = {};
-  
+
 routes.forEach(route => {
   const stops = route.stops;
   for (let i = 0; i < stops.length - 1; i++) {
@@ -128,7 +128,10 @@ routes.forEach(route => {
     if (!stopGraph[from]) stopGraph[from] = [];
     stopGraph[from].push({ stop: to, route });
 
-    // Graph orienté (on va dans le bon sens)
+    // Si le graphe est orienté, ne pas ajouter l'inverse
+    // Sinon, décommenter la ligne suivante :
+    // if (!stopGraph[to]) stopGraph[to] = [];
+    // stopGraph[to].push({ stop: from, route });
   }
 });
 
@@ -168,11 +171,9 @@ function findPaths(from, to) {
 
       if (visitedStops.has(nextStop)) continue;
 
-const lastRoute = path.length && path[path.length - 1].route ? path[path.length - 1].route.routeId : null;
-const routeChanged = routeId !== lastRoute;
+      const lastRoute = path.length && path[path.length - 1].route ? path[path.length - 1].route.routeId : null;
+      const routeChanged = routeId !== lastRoute;
 
-
-      // Limiter les changements de route (max 4 correspondances)
       const routeChanges = usedRoutes.length + (routeChanged ? 1 : 0);
       if (routeChanges > maxTransfers + 1) continue;
 
@@ -192,7 +193,7 @@ const routeChanged = routeId !== lastRoute;
   return results;
 }
 
-// Afficher résultats
+// Afficher les résultats
 function displayResults(paths) {
   const resultsEl = document.getElementById("results");
   resultsEl.innerHTML = "";
@@ -209,40 +210,28 @@ function displayResults(paths) {
   for (const path of topPaths) {
     const li = document.createElement("li");
     let html = "";
+    let previousRoute = null;
 
-    if (Array.isArray(stops) && stops.length > 1) {
-  for (let i = 0; i < stops.length - 1; i++) {
-    const from = stops[i], to = stops[i + 1];
-    // ton code ici...
-  }
-}
+    for (let i = 0; i < path.length; i++) {
+      const { stop, route } = path[i];
+      const isNewRoute = route && route.routeId !== previousRoute;
 
+      if (i > 0) html += " → ";
 
-  if (!stopGraph[from]) stopGraph[from] = [];
-  if (!stopGraph[to]) stopGraph[to] = [];
+      html += `<span${i > 0 && i < path.length - 1 ? ' class="intermediate"' : ''}>${stop}</span>`;
 
-  stopGraph[from].push({ stop: to, route }); // sens normal
-  stopGraph[to].push({ stop: from, route }); // sens inverse
-}
-
-
-      if (i === 0 || i === path.length - 1) {
-        // Départ ou arrivée
-        html += `<span>${stop}</span>`;
-      } else {
-        // Intermédiaire
-        html += ` → <span class="intermediate">${stop}</span>`;
-      }
-
-      // Afficher la ligne si elle change
-      if (isNewRoute) {
+      if (isNewRoute && route) {
         html += ` <span style="color: gray">[${route.routeId}]</span>`;
+        previousRoute = route.routeId;
       }
     }
-  }
- li.innerHTML = html;
+
+    li.innerHTML = html;
     resultsEl.appendChild(li);
-// Événement
+  }
+}
+
+// Événement bouton recherche
 document.getElementById("searchBtn").addEventListener("click", () => {
   const from = document.getElementById("start").value;
   const to = document.getElementById("end").value;
@@ -263,7 +252,3 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     displayResults(paths);
   }, 10);
 });
-</script>
-
-</body>
-</html>
