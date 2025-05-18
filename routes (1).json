@@ -1,4 +1,4 @@
-const routes = 
+
 [{"routeId":"R001","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
 {"routeId":"R002","type":"Metro","stops":["Stepford Central","Four Ways","Stepford East","Stepford High Street","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
 {"routeId":"R003","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Angel Pass","Bodin","Coxly","Benton","Benton Bridge","Hampton Hargate","Upper Staploe","Water Newton","Rocket Parade","Leighton Stepford Road","Leighton City"]},
