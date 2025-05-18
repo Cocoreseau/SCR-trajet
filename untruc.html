@@ -621,10 +621,9 @@ const routes = [{"routeId":"R001","type":"Connect","stops":["Stepford Central","
       "Morganstown"
     ]
   }
-]; // ✅ Fin du tableau, point-virgule ici
-
+];
 const stopGraph = {};
-
+  
 routes.forEach(route => {
   const stops = route.stops;
   for (let i = 0; i < stops.length - 1; i++) {
