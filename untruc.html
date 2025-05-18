@@ -10,6 +10,27 @@
     .intermediate { font-style: italic; font-size: 0.9em; }
   </style>
 </head>
+  <script>
+  const startSelect = document.getElementById('start');
+  const endSelect = document.getElementById('end');
+
+  const allStops = new Set();
+  routes.forEach(route => {
+    route.stops.forEach(stop => allStops.add(stop));
+  });
+
+  const sortedStops = Array.from(allStops).sort();
+  sortedStops.forEach(stop => {
+    const optionStart = document.createElement('option');
+    optionStart.value = optionStart.textContent = stop;
+    startSelect.appendChild(optionStart);
+
+    const optionEnd = document.createElement('option');
+    optionEnd.value = optionEnd.textContent = stop;
+    endSelect.appendChild(optionEnd);
+  });
+</script>
+
 <body>
 
 <h2>Planificateur d'itinéraires (max 4 correspondances)</h2>
