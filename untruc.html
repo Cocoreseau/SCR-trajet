@@ -32,25 +32,25 @@ fetch('routes.json')
     return response.json();
   })
   .then(routes => {
-    // Extraction de tous les arrêts uniques, triés
-    const allStops = [...new Set(routes.flatMap(route => route.stops))].sort();
-
     const startSelect = document.getElementById("start");
     const endSelect = document.getElementById("end");
 
-    // Remplissage des menus déroulants
+    // Extraire tous les arrêts uniques et trier
+    const allStops = [...new Set(routes.flatMap(route => route.stops))].sort();
+
+    // Remplir les menus déroulants
     allStops.forEach(stop => {
       startSelect.add(new Option(stop, stop));
       endSelect.add(new Option(stop, stop));
     });
 
-    // Fonction de recherche d'itinéraires (max 4 correspondances)
-    function findPaths(currentStop, endStop, visitedRoutes, path, depth = 0) {
+    // Recherche d'itinéraires avec max 4 correspondances
+    function findPaths(currentStop, endStop, visitedRouteIds, path, depth = 0) {
       if (depth > 4) return [];
       let results = [];
 
       for (let route of routes) {
-        if (visitedRoutes.includes(route)) continue;
+        if (visitedRouteIds.includes(route.routeId)) continue;
         if (!route.stops.includes(currentStop)) continue;
 
         const currentIndex = route.stops.indexOf(currentStop);
@@ -60,14 +60,13 @@ fetch('routes.json')
           results.push([...path, { route, from: currentStop, to: endStop }]);
         } else {
           for (let nextStop of remainingStops) {
-            const newVisitedRoutes = [...visitedRoutes, route];
+            const newVisitedRouteIds = [...visitedRouteIds, route.routeId];
             const newPath = [...path, { route, from: currentStop, to: nextStop }];
-            const subPaths = findPaths(nextStop, endStop, newVisitedRoutes, newPath, depth + 1);
+            const subPaths = findPaths(nextStop, endStop, newVisitedRouteIds, newPath, depth + 1);
             results = results.concat(subPaths);
           }
         }
       }
-
       return results;
     }
 
