@@ -620,7 +620,10 @@ const routes = [{"routeId":"R001","type":"Connect","stops":["Stepford Central","
       "Morganstown Docks",
       "Morganstown"
     ]
-  },const stopGraph = {};
+  }
+]; // ✅ Fin du tableau, point-virgule ici
+
+const stopGraph = {};
 
 routes.forEach(route => {
   const stops = route.stops;
@@ -636,6 +639,7 @@ routes.forEach(route => {
 
 // Créer la liste des arrêts uniques
 const allStops = Array.from(new Set(routes.flatMap(r => r.stops))).sort();
+
 const populateSelect = (id) => {
   const select = document.getElementById(id);
   allStops.forEach(stop => {
@@ -645,6 +649,7 @@ const populateSelect = (id) => {
     select.appendChild(option);
   });
 };
+
 populateSelect("start");
 populateSelect("end");
 
