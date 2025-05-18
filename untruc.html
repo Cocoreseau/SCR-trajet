@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -10,52 +10,6 @@
     .intermediate { font-style: italic; font-size: 0.9em; }
   </style>
 </head>
-  <script>
-  const startSelect = document.getElementById('start');
-  const endSelect = document.getElementById('end');
-
-  const allStops = new Set();
-  routes.forEach(route => {
-    route.stops.forEach(stop => allStops.add(stop));
-  });
-
-  const sortedStops = Array.from(allStops).sort();
-  sortedStops.forEach(stop => {
-    const optionStart = document.createElement('option');
-    optionStart.value = optionStart.textContent = stop;
-    startSelect.appendChild(optionStart);
-
-    const optionEnd = document.createElement('option');
-    optionEnd.value = optionEnd.textContent = stop;
-    endSelect.appendChild(optionEnd);
-  });
-
-document.getElementById("search").addEventListener("click", () => {
-  const start = document.getElementById("start").value;
-  const end = document.getElementById("end").value;
-
-  const resultList = document.getElementById("results");
-  resultList.innerHTML = ""; // Efface les anciens résultats
-
-  const matchingRoutes = routes.filter(route =>
-    route.stops.includes(start) &&
-    route.stops.includes(end) &&
-    route.stops.indexOf(start) < route.stops.indexOf(end)
-  );
-
-  if (matchingRoutes.length === 0) {
-    resultList.innerHTML = "<li>Aucun itinéraire trouvé</li>";
-  } else {
-    matchingRoutes.forEach(route => {
-      const li = document.createElement("li");
-      li.textContent = `Ligne ${route.name} : ${start} → ${end}`;
-      resultList.appendChild(li);
-    });
-  }
-});
-
-</script>
-
 <body>
 
 <h2>Planificateur d'itinéraires (max 4 correspondances)</h2>
@@ -66,7 +20,7 @@ document.getElementById("search").addEventListener("click", () => {
 <label for="end">Arrivée :</label>
 <select id="end"><option value="">-- Choisir --</option></select>
 
-<button id="searchBtn">Chercher itinéraires</button>
+<button id="search">Chercher itinéraires</button>
 
 <h3>Résultats :</h3>
 <ul id="results"></ul>
