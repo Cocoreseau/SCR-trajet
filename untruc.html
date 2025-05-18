@@ -714,8 +714,13 @@ function displayResults(paths) {
     const li = document.createElement("li");
     let html = "";
 
-    for (let i = 0; i < stops.length - 1; i++) {
-  const from = stops[i], to = stops[i + 1];
+    if (Array.isArray(stops) && stops.length > 1) {
+  for (let i = 0; i < stops.length - 1; i++) {
+    const from = stops[i], to = stops[i + 1];
+    // ton code ici...
+  }
+}
+
 
   if (!stopGraph[from]) stopGraph[from] = [];
   if (!stopGraph[to]) stopGraph[to] = [];
