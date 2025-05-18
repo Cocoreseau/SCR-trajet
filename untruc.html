@@ -731,10 +731,16 @@ function displayResults(paths) {
     const li = document.createElement("li");
     let html = "";
 
-    for (let i = 0; i < path.length; i++) {
-      const { stop, route } = path[i];
-      const prevRoute = i > 0 ? path[i - 1].route?.routeId : null;
-      const isNewRoute = route && route.routeId !== prevRoute;
+    for (let i = 0; i < stops.length - 1; i++) {
+  const from = stops[i], to = stops[i + 1];
+
+  if (!stopGraph[from]) stopGraph[from] = [];
+  if (!stopGraph[to]) stopGraph[to] = [];
+
+  stopGraph[from].push({ stop: to, route }); // sens normal
+  stopGraph[to].push({ stop: from, route }); // sens inverse
+}
+
 
       if (i === 0 || i === path.length - 1) {
         // Départ ou arrivée
