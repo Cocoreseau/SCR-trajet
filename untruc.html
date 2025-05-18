@@ -29,6 +29,31 @@
     optionEnd.value = optionEnd.textContent = stop;
     endSelect.appendChild(optionEnd);
   });
+
+document.getElementById("search").addEventListener("click", () => {
+  const start = document.getElementById("start").value;
+  const end = document.getElementById("end").value;
+
+  const resultList = document.getElementById("results");
+  resultList.innerHTML = ""; // Efface les anciens résultats
+
+  const matchingRoutes = routes.filter(route =>
+    route.stops.includes(start) &&
+    route.stops.includes(end) &&
+    route.stops.indexOf(start) < route.stops.indexOf(end)
+  );
+
+  if (matchingRoutes.length === 0) {
+    resultList.innerHTML = "<li>Aucun itinéraire trouvé</li>";
+  } else {
+    matchingRoutes.forEach(route => {
+      const li = document.createElement("li");
+      li.textContent = `Ligne ${route.name} : ${start} → ${end}`;
+      resultList.appendChild(li);
+    });
+  }
+});
+
 </script>
 
 <body>
