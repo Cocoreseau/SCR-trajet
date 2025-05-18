@@ -624,6 +624,7 @@ const routes = [{"routeId":"R001","type":"Connect","stops":["Stepford Central","
 
 // Construire le graphe
 const stopGraph = {};
+
 routes.forEach(route => {
   const stops = route.stops;
   for (let i = 0; i < stops.length - 1; i++) {
