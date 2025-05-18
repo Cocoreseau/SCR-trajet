@@ -672,8 +672,9 @@ function findPaths(from, to) {
 
       if (visitedStops.has(nextStop)) continue;
 
-      const lastRoute = path.length ? path[path.length - 1].route.routeId : null;
-      const routeChanged = routeId !== lastRoute;
+const lastRoute = path.length && path[path.length - 1].route ? path[path.length - 1].route.routeId : null;
+const routeChanged = routeId !== lastRoute;
+
 
       // Limiter les changements de route (max 4 correspondances)
       const routeChanges = usedRoutes.length + (routeChanged ? 1 : 0);
