@@ -1,22 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Planificateur SCR</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    select, button { margin: 10px 0; padding: 5px; }
+    li { margin-bottom: 10px; }
+    .intermediate { font-style: italic; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+
+<h2>Planificateur d'itinéraires (max 4 correspondances)</h2>
+
+<label for="start">Départ :</label>
+<select id="start"><option value="">-- Choisir --</option></select>
+
+<label for="end">Arrivée :</label>
+<select id="end"><option value="">-- Choisir --</option></select>
+
+<button id="search">Chercher itinéraires</button>
+
+<h3>Résultats :</h3>
+<ul id="results"></ul>
+
 <script>
 fetch('routes.json')
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) throw new Error('Erreur réseau');
+    return response.json();
+  })
   .then(routes => {
+    // Extraction de tous les arrêts uniques, triés
     const allStops = [...new Set(routes.flatMap(route => route.stops))].sort();
 
     const startSelect = document.getElementById("start");
     const endSelect = document.getElementById("end");
 
+    // Remplissage des menus déroulants
     allStops.forEach(stop => {
-      const option1 = new Option(stop, stop);
-      const option2 = new Option(stop, stop);
-      startSelect.add(option1);
-      endSelect.add(option2);
+      startSelect.add(new Option(stop, stop));
+      endSelect.add(new Option(stop, stop));
     });
 
+    // Fonction de recherche d'itinéraires (max 4 correspondances)
     function findPaths(currentStop, endStop, visitedRoutes, path, depth = 0) {
       if (depth > 4) return [];
       let results = [];
+
       for (let route of routes) {
         if (visitedRoutes.includes(route)) continue;
         if (!route.stops.includes(currentStop)) continue;
@@ -35,6 +67,7 @@ fetch('routes.json')
           }
         }
       }
+
       return results;
     }
 
@@ -57,7 +90,7 @@ fetch('routes.json')
         results.slice(0, 5).forEach(path => {
           const li = document.createElement("li");
           li.innerHTML = path.map(step => 
-            `Ligne ${step.route.routeId} (${step.route.type}) : ${step.from} → ${step.to}`
+            `Ligne <strong>${step.route.routeId}</strong> (${step.route.type}) : ${step.from} → ${step.to}`
           ).join("<br>");
           resultList.appendChild(li);
         });
@@ -65,6 +98,11 @@ fetch('routes.json')
     });
   })
   .catch(error => {
-    console.error('Erreur lors du chargement des routes:', error);
+    const resultList = document.getElementById("results");
+    resultList.innerHTML = `<li>Erreur lors du chargement des routes : ${error.message}</li>`;
+    console.error(error);
   });
 </script>
+
+</body>
+</html>
