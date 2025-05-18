@@ -44,8 +44,7 @@
 {"routeId":"R043","type":"Connect","stops":["Leighton City","Edgemead","Fayemere","Westercoast","Milcastle Racecourse","Milcastle","Westwyvern","Starrylock","Northshore","Llyn-by-the-Sea"]},
 {"routeId":"R044","type":"Connect","stops":["Leighton City","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern","Starrylock","Northshore","Llyn-by-the-Sea"]},
 {"routeId":"R045","type":"Connect","stops":["Leighton West","Edgemead","Fayemere","Westercoast","Milcastle","Westwyvern","Starrylock","Northshore","Llyn-by-the-Sea"]},
-{"routeId":"R046","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]}]
-[
+{"routeId":"R046","type":"Connect","stops":["Stepford Central","Stepford East","St Helens Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central"]},
 {"routeId":"R047","type":"Metro","stops":["St Helen's Bridge","Angel Pass","Bodin","Coxly","Benton","Port Benton"]},
 {"routeId":"R048","type":"Connect","stops":["St Helen's Bridge","Bodin","Coxly","Benton","Benton Bridge","Stepford Airport Parkway","Stepford Airport Central","Airport Terminal 2"]},
 {"routeId":"R049","type":"Connect","stops":["Rayleigh Bay","Canalea Bridge","Aslockby","Edgemead"]},
